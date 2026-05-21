@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:rukun_app_proyek4/utils/appbar_utils.dart';
 import 'package:rukun_app_proyek4/utils/colors_utils.dart';
 import 'package:rukun_app_proyek4/utils/notification_utils.dart';
 import 'package:rukun_app_proyek4/viewmodels/penduduk/kartukeluarga/add_kk_viewmodel.dart';
+import 'package:rukun_app_proyek4/services/pcd/kk_extraction_result.dart';
 
 class AddKKPage extends StatelessWidget {
   const AddKKPage({super.key});
@@ -31,6 +33,20 @@ class AddKKPage extends StatelessWidget {
           _buildHeader(),
 
           const SizedBox(height: 16),
+
+          // ── Tombol Scan KK (PCD) ──
+          _buildScanSection(context, vm),
+
+          const SizedBox(height: 16),
+
+          // ── Extraction Feedback ──
+          if (vm.isExtracting ||
+              vm.extractionResult != null ||
+              vm.extractionError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildExtractionFeedback(vm),
+            ),
 
           _buildFormCard(vm),
 
@@ -84,12 +100,311 @@ class AddKKPage extends StatelessWidget {
     );
   }
 
+  // ──────────────────────────────────────────────
+  // Scan KK Section (PCD Feature)
+  // ──────────────────────────────────────────────
+
+  Widget _buildScanSection(BuildContext context, AddKKViewModel vm) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ColorsUtils.b100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: ColorsUtils.b50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.document_scanner_outlined,
+                  color: ColorsUtils.b500,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Scan Kartu Keluarga",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: ColorsUtils.b400,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      "Ambil foto KK untuk auto-fill data",
+                      style: TextStyle(fontSize: 11, color: ColorsUtils.gray),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Dua tombol: Kamera & Galeri
+          Row(
+            children: [
+              Expanded(
+                child: _buildScanButton(
+                  context: context,
+                  vm: vm,
+                  icon: Icons.camera_alt_outlined,
+                  label: "Kamera",
+                  source: ImageSource.camera,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildScanButton(
+                  context: context,
+                  vm: vm,
+                  icon: Icons.photo_library_outlined,
+                  label: "Galeri",
+                  source: ImageSource.gallery,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScanButton({
+    required BuildContext context,
+    required AddKKViewModel vm,
+    required IconData icon,
+    required String label,
+    required ImageSource source,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: vm.isExtracting ? null : () => vm.scanKK(source),
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: ColorsUtils.b500,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: ColorsUtils.b100,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────
+  // Extraction Feedback
+  // ──────────────────────────────────────────────
+
+  Widget _buildExtractionFeedback(AddKKViewModel vm) {
+    // Sedang memproses
+    if (vm.isExtracting) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: ColorsUtils.b50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: ColorsUtils.b100),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: ColorsUtils.b500,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                vm.extractionStatus,
+                style: const TextStyle(fontSize: 13, color: ColorsUtils.b400),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Error
+    if (vm.extractionError != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFCA5A5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  color: Color(0xFFEF4444),
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    vm.extractionError!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFDC2626),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: vm.retryExtraction,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text("Coba Lagi", style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFDC2626),
+                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Sukses
+    if (vm.extractionResult != null && vm.extractionResult!.isSuccess) {
+      final r = vm.extractionResult!;
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0FDF4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF86EFAC)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 18),
+                SizedBox(width: 8),
+                Text(
+                  "Data berhasil diekstrak!",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF16A34A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildExtractedField("No. KK", r.noKK),
+            _buildExtractedField("Alamat", r.alamat),
+            _buildExtractedField("Kode Pos", r.kodePos),
+            const SizedBox(height: 4),
+            const Text(
+              "* Silakan periksa & koreksi jika diperlukan",
+              style: TextStyle(
+                fontSize: 10,
+                color: Color(0xFF16A34A),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildExtractedField(String label, FieldConfidence fieldConfidence) {
+    final value = fieldConfidence.value;
+    final confidence = fieldConfidence.confidence;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 70,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A)),
+            ),
+          ),
+          const Text(
+            ": ",
+            style: TextStyle(fontSize: 11, color: Color(0xFF16A34A)),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value ?? "—",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: value != null
+                        ? FontWeight.w600
+                        : FontWeight.normal,
+                    color: value != null
+                        ? const Color(0xFF166534)
+                        : const Color(0xFF86EFAC),
+                  ),
+                ),
+                if (value != null)
+                  Text(
+                    "Confidence: ${(confidence * 100).toStringAsFixed(0)}%",
+                    style: const TextStyle(
+                      fontSize: 9,
+                      color: Color(0xFFA3A3A3),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────
+  // Form
+  // ──────────────────────────────────────────────
+
   Widget _buildFormCard(AddKKViewModel vm) {
     return _buildCard(
       header: _buildSectionHeader('Data Kartu Keluarga', Icons.home_outlined),
       child: Column(
         children: [
           TextField(
+            controller: vm.noKKController,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: 'No KK'),
             onChanged: (value) => vm.noKK = value,
@@ -98,6 +413,7 @@ class AddKKPage extends StatelessWidget {
           const SizedBox(height: 12),
 
           TextField(
+            controller: vm.alamatController,
             decoration: const InputDecoration(labelText: 'Alamat'),
             onChanged: (value) => vm.alamat = value,
           ),
@@ -105,6 +421,7 @@ class AddKKPage extends StatelessWidget {
           const SizedBox(height: 12),
 
           TextField(
+            controller: vm.kodePosController,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(labelText: 'Kode Pos'),
             onChanged: (value) => vm.kodePos = value,
