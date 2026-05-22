@@ -5,7 +5,7 @@ import 'package:rukun_app_proyek4/utils/appbar_utils.dart';
 import 'package:rukun_app_proyek4/utils/colors_utils.dart';
 import 'package:rukun_app_proyek4/utils/notification_utils.dart';
 import 'package:rukun_app_proyek4/viewmodels/penduduk/kartukeluarga/add_kk_viewmodel.dart';
-import 'package:rukun_app_proyek4/services/pcd/kk_extraction_result.dart';
+import 'package:rukun_app_proyek4/services/pcd/kk_ocr_engine.dart';
 
 class AddKKPage extends StatelessWidget {
   const AddKKPage({super.key});
@@ -322,7 +322,7 @@ class AddKKPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            _buildExtractedField("No. KK", r.noKK),
+            _buildExtractedField("No. KK", r.nomorKK),
             _buildExtractedField("Alamat", r.alamat),
             _buildExtractedField("Kode Pos", r.kodePos),
             const SizedBox(height: 4),
@@ -342,9 +342,9 @@ class AddKKPage extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  Widget _buildExtractedField(String label, FieldConfidence fieldConfidence) {
-    final value = fieldConfidence.value;
-    final confidence = fieldConfidence.confidence;
+  Widget _buildExtractedField(String label, ParseResult? fieldResult) {
+    final value = fieldResult?.value;
+    final confidence = fieldResult?.confidence ?? 0.0;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),

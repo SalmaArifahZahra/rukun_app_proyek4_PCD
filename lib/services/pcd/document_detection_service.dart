@@ -494,9 +494,23 @@ class DocumentDetectionService {
                       p10.r * fx * (1 - fy) +
                       p01.r * (1 - fx) * fy +
                       p11.r * fx * fy)
-                  as int;
+                  .toInt();
+          
+          final g =
+              (p00.g * (1 - fx) * (1 - fy) +
+                      p10.g * fx * (1 - fy) +
+                      p01.g * (1 - fx) * fy +
+                      p11.g * fx * fy)
+                  .toInt();
 
-          result.setPixelRgb(x, y, r, r, r);
+          final b =
+              (p00.b * (1 - fx) * (1 - fy) +
+                      p10.b * fx * (1 - fy) +
+                      p01.b * (1 - fx) * fy +
+                      p11.b * fx * fy)
+                  .toInt();
+
+          result.setPixelRgb(x, y, r, g, b);
         }
       }
     }

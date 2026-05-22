@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rukun_app_proyek4/models/keluarga_model.dart';
 import 'package:rukun_app_proyek4/repositories/kk_repository.dart';
-import 'package:rukun_app_proyek4/services/pcd/kk_extraction_result.dart';
-import 'package:rukun_app_proyek4/services/pcd/kk_extraction_service.dart';
+import 'package:rukun_app_proyek4/services/pcd/kk_extraction_service_v2.dart';
 import 'package:rukun_app_proyek4/services/utils/cloudinary_service.dart';
 
 class AddKKViewModel extends ChangeNotifier {
@@ -27,7 +26,7 @@ class AddKKViewModel extends ChangeNotifier {
   // ── PCD Extraction State ──
   bool isExtracting = false;
   String? extractionError;
-  KKExtractionResult? extractionResult;
+  KKExtractionOutputV2? extractionResult;
   String extractionStatus = '';
 
   Keluarga? kk;
@@ -106,11 +105,11 @@ class AddKKViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final service = KKExtractionService();
+      final service = KKExtractionServiceV2();
       extractionStatus = 'Menjalankan OCR...';
       notifyListeners();
 
-      final result = await service.extractFromImage(fotoKK!);
+      final result = await service.extractFromFile(fotoKK!);
       extractionResult = result;
 
       if (result.isSuccess) {
@@ -119,7 +118,7 @@ class AddKKViewModel extends ChangeNotifier {
         extractionStatus = 'Ekstraksi berhasil!';
       } else {
         extractionStatus = 'Tidak dapat mengekstrak data dari gambar.';
-        extractionError =
+        extractionError = result.error ??
             'OCR tidak menemukan field KK. Coba ambil ulang dengan pencahayaan lebih baik.';
       }
     } catch (e) {
@@ -138,19 +137,18 @@ class AddKKViewModel extends ChangeNotifier {
   }
 
   /// Terapkan hasil ekstraksi ke field form
-  void _applyExtractionResult(KKExtractionResult result) {
-    // New model: result.noKK adalah FieldConfidence object
-    if (result.noKK.value != null) {
-      noKK = result.noKK.value!;
-      noKKController.text = result.noKK.value!;
+  void _applyExtractionResult(KKExtractionOutputV2 result) {
+    if (result.nomorKK?.value != null) {
+      noKK = result.nomorKK!.value!;
+      noKKController.text = result.nomorKK!.value!;
     }
-    if (result.alamat.value != null) {
-      alamat = result.alamat.value!;
-      alamatController.text = result.alamat.value!;
+    if (result.alamat?.value != null) {
+      alamat = result.alamat!.value!;
+      alamatController.text = result.alamat!.value!;
     }
-    if (result.kodePos.value != null) {
-      kodePos = result.kodePos.value!;
-      kodePosController.text = result.kodePos.value!;
+    if (result.kodePos?.value != null) {
+      kodePos = result.kodePos!.value!;
+      kodePosController.text = result.kodePos!.value!;
     }
 
     // Build detailed status message dengan confidence scores
@@ -158,54 +156,43 @@ class AddKKViewModel extends ChangeNotifier {
   }
 
   /// Build pesan status ekstraksi yang detail dengan confidence scores
-  void _buildDetailedExtractionStatus(KKExtractionResult result) {
+  void _buildDetailedExtractionStatus(KKExtractionOutputV2 result) {
     final buffer = StringBuffer();
 
     buffer.writeln('✅ Ekstraksi Selesai');
     buffer.writeln('');
     buffer.writeln(
-      '📊 Kualitas Gambar: ${(result.overallQuality * 100).toStringAsFixed(0)}%',
+      '📊 Kualitas Gambar: ${(result.qualityScore * 100).toStringAsFixed(0)}%',
     );
-    if (result.perspectiveCorrected > 0) {
+    if (result.perspectiveScore > 0) {
       buffer.writeln(
-        '📐 Koreksi Perspektif: ${(result.perspectiveCorrected * 100).toStringAsFixed(0)}%',
+        '📐 Koreksi Perspektif: ${(result.perspectiveScore * 100).toStringAsFixed(0)}%',
       );
     }
     buffer.writeln('');
     buffer.writeln('Confidence Scores:');
 
     // List hasil ekstraksi dengan confidence
-    if (result.noKK.value != null) {
-      buffer.writeln('  • No. KK: ${(result.noKK.confidence * 100).toInt()}%');
+    if (result.nomorKK?.value != null) {
+      buffer.writeln('  • No. KK: ${(result.nomorKK!.confidence * 100).toInt()}%');
     }
-    if (result.alamat.value != null) {
+    if (result.alamat?.value != null) {
       buffer.writeln(
-        '  • Alamat: ${(result.alamat.confidence * 100).toInt()}%',
+        '  • Alamat: ${(result.alamat!.confidence * 100).toInt()}%',
       );
     }
-    if (result.kodePos.value != null) {
+    if (result.kodePos?.value != null) {
       buffer.writeln(
-        '  • Kode Pos: ${(result.kodePos.confidence * 100).toInt()}%',
+        '  • Kode Pos: ${(result.kodePos!.confidence * 100).toInt()}%',
       );
     }
 
-    // Show fields needing review (confidence < 70%)
-    if (result.fieldsNeedingReview.isNotEmpty) {
+    // Show validation errors / warnings jika ada
+    if (result.warnings.isNotEmpty) {
       buffer.writeln('');
-      buffer.writeln('⚠️  Fields yang perlu review:');
-      for (final field in result.fieldsNeedingReview) {
-        buffer.writeln(
-          '  • ${field.fieldName}: ${(field.confidence * 100).toInt()}%',
-        );
-      }
-    }
-
-    // Show validation errors jika ada
-    if (result.validationErrors.isNotEmpty) {
-      buffer.writeln('');
-      buffer.writeln('❌ Validation Errors:');
-      for (final error in result.validationErrors) {
-        buffer.writeln('  • $error');
+      buffer.writeln('⚠️  Warnings:');
+      for (final w in result.warnings) {
+        buffer.writeln('  • $w');
       }
     }
 
