@@ -26,8 +26,15 @@ class ImageQualityResult {
     double brightness,
     double contrast,
   ) {
-    // Kriteria: blur > 0.6, brightness 0.3-0.8, contrast > 0.3
-    return blur > 0.6 && brightness > 0.3 && brightness < 0.8 && contrast > 0.3;
+    // Kriteria (A4 Document OCR optimized):
+    // - blur > 0.6 (cukup tajam)
+    // - brightness 0.2-0.95 (allow terang karena scan/photo bisa bright)
+    // - contrast > 0.2 (teks terlihat dari background)
+    // Note: ML Kit bisa handle terang image dengan baik, jadi relax brightness threshold
+    return blur > 0.6 &&
+        brightness > 0.2 &&
+        brightness < 0.95 &&
+        contrast > 0.2;
   }
 
   double get overallQuality {
@@ -63,19 +70,21 @@ class ImageQualityChecker {
       );
     }
 
-    // 2. Brightness Check
+    // 2. Brightness Check (A4 Document OCR optimized)
     final brightnessScore = _checkBrightness(image);
-    if (brightnessScore < 0.3) {
+    if (brightnessScore < 0.2) {
       warnings.add('Gambar terlalu gelap. Tambahkan pencahayaan lebih baik.');
-    } else if (brightnessScore > 0.8) {
-      warnings.add('Gambar terlalu terang. Kurangi pencahayaan atau exposure.');
+    } else if (brightnessScore > 0.9) {
+      warnings.add(
+        '🔆 Gambar sangat terang (scan/glare). ML Kit masih bisa OCR.',
+      );
     }
 
-    // 3. Contrast Check
+    // 3. Contrast Check (A4 Document OCR)
     final contrastScore = _checkContrast(image);
-    if (contrastScore < 0.3) {
+    if (contrastScore < 0.2) {
       warnings.add(
-        'Kontras teks rendah. Ambil foto dengan background lebih gelap atau teks lebih jelas.',
+        'Kontras rendah. Ambil foto dengan lighting lebih baik atau background lebih gelap.',
       );
     }
 
@@ -129,8 +138,12 @@ class ImageQualityChecker {
     return normalizedScore;
   }
 
-  /// Check brightness level
-  /// Return value ideal: 0.4 - 0.7 (tidak terlalu gelap, tidak terlalu terang)
+  /// Check brightness level (A4 Document optimized)
+  /// Return value ideal: 0.3 - 0.8 (medium brightness)
+  /// Accept range: 0.2 - 0.95 (allow brighter scans/photos)
+  ///
+  /// Note: ML Kit Text Recognition handles bright images well,
+  /// so we're more lenient with brightness for scanned A4 documents
   static double _checkBrightness(img.Image image) {
     final gray = img.grayscale(image);
     double sum = 0;
@@ -145,9 +158,10 @@ class ImageQualityChecker {
 
     final avgBrightness = sum / pixelCount / 255.0;
 
-    // Ideal brightness: 0.4 - 0.7
-    // Score: distance dari ideal range
-    if (avgBrightness < 0.3) {
+    // Ideal brightness: 0.3 - 0.8 (medium)
+    // Score: normalized distance dari ideal range
+    // Allow higher brightness (0.95) untuk scanned documents
+    if (avgBrightness < 0.2) {
       return avgBrightness; // Terlalu gelap
     } else if (avgBrightness > 0.8) {
       return 1.0 - (avgBrightness - 0.8); // Terlalu terang

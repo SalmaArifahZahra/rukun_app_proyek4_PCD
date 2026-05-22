@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 /// Simple point class untuk integer coordinates
@@ -404,31 +405,39 @@ class DocumentDetectionService {
     DocumentCorners corners,
   ) {
     try {
-      final targetWidth =
-          (corners.topLeft.dx.toInt() == corners.topRight.dx.toInt()
-                  ? DocumentCorners._distance(
-                      corners.topLeft,
-                      corners.bottomLeft,
-                    )
-                  : DocumentCorners._distance(
-                      corners.topLeft,
-                      corners.topRight,
-                    ))
-              .toInt();
+      // Calculate target dimensions dengan explicit double to int conversion
+      final w1 = DocumentCorners._distance(
+        corners.topLeft,
+        corners.topRight,
+      ).toInt(); // top edge width
+      final w2 = DocumentCorners._distance(
+        corners.bottomLeft,
+        corners.bottomRight,
+      ).toInt(); // bottom edge width
+      final targetWidth = (w1 + w2) ~/ 2; // average width
 
-      final targetHeight =
-          (corners.topLeft.dy.toInt() == corners.bottomLeft.dy.toInt()
-                  ? DocumentCorners._distance(corners.topLeft, corners.topRight)
-                  : DocumentCorners._distance(
-                      corners.topLeft,
-                      corners.bottomLeft,
-                    ))
-              .toInt();
+      final h1 = DocumentCorners._distance(
+        corners.topLeft,
+        corners.bottomLeft,
+      ).toInt(); // left edge height
+      final h2 = DocumentCorners._distance(
+        corners.topRight,
+        corners.bottomRight,
+      ).toInt(); // right edge height
+      final targetHeight = (h1 + h2) ~/ 2; // average height
+
+      // Ensure minimum dimensions
+      if (targetWidth < 100 || targetHeight < 100) {
+        debugPrint(
+          '⚠️  Calculated perspective dimensions too small: ${targetWidth}x${targetHeight}',
+        );
+        return source;
+      }
 
       // Simple 4-point perspective transform
       return _perspectiveTransform(source, corners, targetWidth, targetHeight);
     } catch (e) {
-      print('❌ Error correcting perspective: $e');
+      debugPrint('❌ Error correcting perspective: $e');
       return source;
     }
   }
