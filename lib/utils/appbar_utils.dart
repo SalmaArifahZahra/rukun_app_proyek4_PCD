@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rukun_app_proyek4/utils/avatar_utils.dart';
 import 'package:rukun_app_proyek4/utils/colors_utils.dart';
+import 'package:rukun_app_proyek4/services/local/offline_sync_status_service.dart';
 
 class AppBarUtils {
   static PreferredSizeWidget buildAppBar({
@@ -14,6 +15,7 @@ class AppBarUtils {
     Widget? leading,
     Widget? trailing,
     Widget? settingsWidget,
+    bool showSyncBadge = true,
   }) {
     final canPop = Navigator.canPop(context);
 
@@ -92,6 +94,9 @@ class AppBarUtils {
               ] else if (trailing != null) ...[
                 const SizedBox(width: 8),
                 trailing,
+              ] else if (showSyncBadge) ...[
+                const SizedBox(width: 8),
+                const _OfflineSyncBadge(),
               ],
             ],
           ),
@@ -134,5 +139,53 @@ class AppBarUtils {
     if (hour < 18) return "Selamat Sore";
 
     return "Selamat Malam";
+  }
+}
+
+class _OfflineSyncBadge extends StatelessWidget {
+  const _OfflineSyncBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: OfflineSyncStatusService.instance.pendingCount,
+      builder: (context, count, _) {
+        final hasPending = count > 0;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: hasPending
+                ? ColorsUtils.white.withValues(alpha: 0.16)
+                : ColorsUtils.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: ColorsUtils.white.withValues(alpha: 0.22),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                hasPending ? Icons.sync : Icons.cloud_done_outlined,
+                size: 16,
+                color: ColorsUtils.white,
+              ),
+              if (hasPending) ...[
+                const SizedBox(width: 6),
+                Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: ColorsUtils.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
   }
 }

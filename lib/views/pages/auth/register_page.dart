@@ -46,7 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final vm = context.watch<AuthViewModel>();
 
     return Scaffold(
-      backgroundColor: ColorsUtils.white,
+      backgroundColor: ColorsUtils.lightgray,
       resizeToAvoidBottomInset: true,
 
       body: SafeArea(
@@ -71,7 +71,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue,
+                      color: ColorsUtils.b200,
                     ),
                   ),
 
@@ -79,7 +79,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
                   const Text(
                     "Silahkan Daftar menggunakan NIK yang sudah terdaftar",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: ColorsUtils.gray),
                   ),
 
                   const SizedBox(height: 30),
@@ -128,12 +128,12 @@ class _RegisterPageState extends State<RegisterPage> {
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
                               // ignore: deprecated_member_use
-                              color: Colors.red.withOpacity(0.1),
+                              color: ColorsUtils.red.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               vm.errorMessage!,
-                              style: const TextStyle(color: Colors.red),
+                              style: const TextStyle(color: ColorsUtils.red),
                             ),
                           ),
                   ),
@@ -189,7 +189,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
-                                color: Colors.white,
+                                color: ColorsUtils.white,
                                 strokeWidth: 2,
                               ),
                             )
@@ -217,12 +217,12 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: const Text.rich(
                         TextSpan(
                           text: "Sudah punya akun? ",
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: ColorsUtils.gray),
                           children: [
                             TextSpan(
                               text: "Masuk di sini",
                               style: TextStyle(
-                                color: Colors.blue,
+                                color: ColorsUtils.b200,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -258,7 +258,7 @@ class _RegisterPageState extends State<RegisterPage> {
           : null,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.grey),
+        prefixIcon: Icon(icon, color: ColorsUtils.gray),
 
         suffixIcon: isPassword
             ? IconButton(
@@ -270,7 +270,7 @@ class _RegisterPageState extends State<RegisterPage> {
             : null,
 
         filled: true,
-        fillColor: Colors.grey.shade100,
+        fillColor: ColorsUtils.white,
         contentPadding: const EdgeInsets.symmetric(vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

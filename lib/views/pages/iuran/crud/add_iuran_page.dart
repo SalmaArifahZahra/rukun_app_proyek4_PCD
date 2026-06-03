@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:rukun_app_proyek4/models/user_model.dart';
 import 'package:rukun_app_proyek4/utils/appbar_utils.dart';
 import 'package:rukun_app_proyek4/models/iuran/iuran_model.dart';
+import 'package:rukun_app_proyek4/utils/colors_utils.dart';
 import 'package:rukun_app_proyek4/utils/notification_utils.dart';
 import 'package:rukun_app_proyek4/viewmodels/iuran/add_iuran_viewmodel.dart';
 
@@ -58,7 +59,7 @@ class _AddIuranPageState extends State<AddIuranPage> {
               _buildCard(
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.blue),
+                    const Icon(Icons.info_outline, color: ColorsUtils.b200),
                     const SizedBox(width: 10),
 
                     Expanded(
@@ -150,7 +151,7 @@ class _AddIuranPageState extends State<AddIuranPage> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: ColorsUtils.b200,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -158,7 +159,7 @@ class _AddIuranPageState extends State<AddIuranPage> {
                   onPressed: _submit,
                   child: const Text(
                     "Simpan Iuran",
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: ColorsUtils.white),
                   ),
                 ),
               ),
@@ -174,7 +175,7 @@ class _AddIuranPageState extends State<AddIuranPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ColorsUtils.white,
         borderRadius: BorderRadius.circular(16),
       ),
       child: child,
@@ -197,14 +198,14 @@ class _AddIuranPageState extends State<AddIuranPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? Colors.blue : Colors.white,
+          color: selected ? ColorsUtils.b200 : ColorsUtils.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey),
+          border: Border.all(color: ColorsUtils.gray),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : Colors.black,
+            color: selected ? ColorsUtils.white : ColorsUtils.black,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -225,8 +226,8 @@ class _AddIuranPageState extends State<AddIuranPage> {
       nama: namaController.text.trim(),
       jumlah: jumlah,
       level: selectedLevel,
-      rwId: widget.user.rw?.id ?? 0,
-      rtId: selectedLevel == "RT" ? widget.user.rt?.id : null,
+      rw: widget.user.rw!,
+      rt: selectedLevel == "RT" ? widget.user.rt! : null,
       tipe: selectedType,
     );
 

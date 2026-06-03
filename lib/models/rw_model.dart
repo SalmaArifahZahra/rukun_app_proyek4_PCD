@@ -7,6 +7,8 @@ class RwModel {
   final String kecamatan;
   final String kabupatenKota;
   final String provinsi;
+  final int saldoKas;
+
   final DateTime? waktuDibuat;
   final DateTime? waktuDiubah;
   final DateTime? waktuDihapus;
@@ -19,6 +21,7 @@ class RwModel {
     required this.kecamatan,
     required this.kabupatenKota,
     required this.provinsi,
+    required this.saldoKas,
     this.waktuDibuat,
     this.waktuDiubah,
     this.waktuDihapus,
@@ -33,6 +36,8 @@ class RwModel {
       kecamatan: json['kecamatan'],
       kabupatenKota: json['kabupaten_kota'],
       provinsi: json['provinsi'],
+      saldoKas: json['saldo_kas'],
+
       waktuDibuat: json['waktu_dibuat'] != null
           ? DateTime.tryParse(json['waktu_dibuat'])
           : null,

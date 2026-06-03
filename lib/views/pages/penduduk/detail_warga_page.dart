@@ -455,9 +455,7 @@ Widget _buildHeaderCard(Warga warga) {
           ),
           child: const Icon(Icons.person, color: ColorsUtils.b500, size: 28),
         ),
-
         const SizedBox(width: 16),
-
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,17 +467,38 @@ Widget _buildHeaderCard(Warga warga) {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-
               const SizedBox(height: 4),
-
               Text(
                 warga.nik,
                 style: const TextStyle(fontSize: 13, color: ColorsUtils.gray),
               ),
+              if (warga.isPendingSync) ...[
+                const SizedBox(height: 8),
+                _buildSyncBadge(),
+              ],
             ],
           ),
         ),
       ],
+    ),
+  );
+}
+
+Widget _buildSyncBadge() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: const Color(0xFFFFF7ED),
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(color: const Color(0xFFF59E0B)),
+    ),
+    child: const Text(
+      'Menunggu sinkron',
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFFB45309),
+      ),
     ),
   );
 }

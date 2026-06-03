@@ -4,6 +4,8 @@ class Keluarga {
   final int rtId;
   final String? alamat;
   final String? kodePos;
+  final String? desa;
+  final String? kecamatan;
   final String? imgRef;
   final DateTime? waktuDibuat;
   final DateTime? waktuDiubah;
@@ -15,6 +17,8 @@ class Keluarga {
     required this.rtId,
     this.alamat,
     this.kodePos,
+    this.desa,
+    this.kecamatan,
     this.imgRef,
     this.waktuDibuat,
     this.waktuDiubah,
@@ -28,15 +32,17 @@ class Keluarga {
       rtId: json['rt_id'] ?? 0,
       alamat: json['alamat'],
       kodePos: json['kode_pos'],
+      desa: json['desa'],
+      kecamatan: json['kecamatan'],
       imgRef: json['img_referensi'],
       waktuDibuat: json['waktu_dibuat'] != null
-          ? DateTime.parse(json['waktu_dibuat'])
+          ? DateTime.tryParse(json['waktu_dibuat'])
           : null,
       waktuDiubah: json['waktu_diubah'] != null
-          ? DateTime.parse(json['waktu_diubah'])
+          ? DateTime.tryParse(json['waktu_diubah'])
           : null,
       waktuDihapus: json['waktu_dihapus'] != null
-          ? DateTime.parse(json['waktu_dihapus'])
+          ? DateTime.tryParse(json['waktu_dihapus'])
           : null,
     );
   }
@@ -48,6 +54,8 @@ class Keluarga {
       'rt_id': rtId,
       'alamat': alamat,
       'kode_pos': kodePos,
+      'desa': desa,
+      'kecamatan': kecamatan,
       'img_referensi': imgRef,
     };
   }
@@ -58,6 +66,8 @@ class Keluarga {
     int? rtId,
     String? alamat,
     String? kodePos,
+    String? desa,
+    String? kecamatan,
     String? imgRef,
   }) {
     return Keluarga(
@@ -66,6 +76,8 @@ class Keluarga {
       rtId: rtId ?? this.rtId,
       alamat: alamat ?? this.alamat,
       kodePos: kodePos ?? this.kodePos,
+      desa: desa ?? this.desa,
+      kecamatan: kecamatan ?? this.kecamatan,
       imgRef: imgRef ?? this.imgRef,
     );
   }

@@ -17,10 +17,12 @@ class ColorsUtils {
   static const skyblue = Color(0xFF0096FF);
   static const g100 = Color(0xFF007F73);
   static const g30 = Color(0x4D007F73);
+  static const green = Color(0xFF48A111);
   static const o100 = Color(0xFFF57D1F);
   static const lightgray = Color(0xFFF5F5F5);
   static const darkgray = Color(0xFF444444);
   static const slateGray = Color(0xFF54555A);
   static const lightred = Color(0xFFFCEBEB);
   static const red = Color(0xFFBA1414);
+  static const transparent = Colors.transparent;
 }

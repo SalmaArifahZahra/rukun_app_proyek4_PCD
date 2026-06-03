@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:rukun_app_proyek4/models/auth_response_model.dart';
 import 'package:rukun_app_proyek4/models/user_model.dart';
-import 'package:rukun_app_proyek4/services/auth_local_service.dart';
+import 'package:rukun_app_proyek4/services/auth/auth_local_service.dart';
 import 'package:rukun_app_proyek4/services/cloud/cloud_auth_service.dart';
 
 class AuthRepository {
@@ -15,13 +15,29 @@ class AuthRepository {
 
     _validateStatus(result);
 
-    final token = result['data']['token'];
+    final data = result['data'];
+
+    if (data is! Map<String, dynamic>) {
+      throw Exception("Format login response tidak valid");
+    }
+
+    final token = data['token'];
 
     await local.saveToken(token);
 
     final me = await service.getMe(token);
 
-    final user = User.fromJson(me['data']);
+    _validateStatus(me);
+
+    final userData = me['data'];
+
+    if (userData is! Map<String, dynamic>) {
+      throw Exception("Format user tidak valid");
+    }
+
+    final user = User.fromJson(userData);
+
+    await local.saveUserJson(userData);
 
     return AuthResponse(token: token, user: user);
   }
@@ -43,7 +59,7 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
-    await local.clearToken();
+    await local.clear();
   }
 
   Future<String?> getToken() async {
@@ -55,7 +71,16 @@ class AuthRepository {
 
     _validateStatus(result);
 
-    return User.fromJson(result['data']);
+    final userData = result['data'] as Map<String, dynamic>;
+    await local.saveUserJson(userData);
+
+    return User.fromJson(userData);
+  }
+
+  Future<User?> getCachedUser() async {
+    final json = await local.getUserJson();
+    if (json == null) return null;
+    return User.fromJson(json);
   }
 
   Future<User?> getUserByWargaId(int wargaId) async {
@@ -92,22 +117,24 @@ class AuthRepository {
     _validateStatus(result);
   }
 
-  Future<Map<String, dynamic>> _safeCall(
-    Future<Map<String, dynamic>> Function() fn,
-  ) async {
+  Future<Map<String, dynamic>> _safeCall(Future<dynamic> Function() fn) async {
     try {
-      return await fn();
-    } on DioException catch (e) {
-      final message = e.response?.data?['message'] ?? "Terjadi kesalahan";
+      final res = await fn();
 
-      throw Exception(message);
-    } catch (e) {
-      throw Exception(e.toString().replaceAll("Exception: ", ""));
+      if (res is Map<String, dynamic>) {
+        return res;
+      }
+
+      throw Exception("Response bukan Map: ${res.runtimeType}");
+    } on DioException {
+      rethrow;
     }
   }
 
   void _validateStatus(Map<String, dynamic> result) {
-    if (result['status'] != 'success') {
+    final status = result['status'];
+
+    if (status != 'success') {
       throw Exception(result['message'] ?? "Unknown error");
     }
   }

@@ -4,9 +4,13 @@ import '../api/dio_client.dart';
 class CloudWargaService {
   final Dio _dio = DioClient().dio;
 
-  Future<Map<String, dynamic>> getAllWarga(String token) async {
+  Future<Map<String, dynamic>> getAllWarga(
+    String token, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     final response = await _dio.get(
       '/warga',
+      queryParameters: queryParameters,
       options: Options(headers: {'Authorization': 'Bearer $token'}),
     );
 

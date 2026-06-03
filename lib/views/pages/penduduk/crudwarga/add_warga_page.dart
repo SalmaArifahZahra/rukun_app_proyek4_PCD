@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:rukun_app_proyek4/models/keluarga_model.dart';
+import 'package:rukun_app_proyek4/services/pcd/ktp_extraction_service.dart';
 import 'package:rukun_app_proyek4/utils/appbar_utils.dart';
 import 'package:rukun_app_proyek4/utils/colors_utils.dart';
 import 'package:rukun_app_proyek4/utils/notification_utils.dart';
 import 'package:rukun_app_proyek4/viewmodels/penduduk/warga/add_warga_viewmodel.dart';
 
 class AddWargaPage extends StatelessWidget {
-  const AddWargaPage({super.key});
+  final Keluarga keluarga;
+
+  const AddWargaPage({super.key, required this.keluarga});
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +36,20 @@ class AddWargaPage extends StatelessWidget {
           _header(),
 
           const SizedBox(height: 16),
+
+          // ── Scan KTP Section ──
+          _buildScanSection(context, vm),
+
+          const SizedBox(height: 16),
+
+          // ── Extraction Feedback ──
+          if (vm.isScanning ||
+              vm.scanResult != null ||
+              vm.scanError != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildExtractionFeedback(vm),
+            ),
 
           _buildSection(
             'Data Pribadi',
@@ -86,6 +105,278 @@ class AddWargaPage extends StatelessWidget {
             child: Text(
               'Lengkapi data warga dengan benar sesuai dokumen resmi',
               style: TextStyle(fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Scan KTP Section ──
+
+  Widget _buildScanSection(BuildContext context, AddWargaViewModel vm) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ColorsUtils.b100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: ColorsUtils.b50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.badge_outlined,
+                  color: ColorsUtils.b500,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Scan KTP",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: ColorsUtils.b400,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      "Ambil foto KTP untuk auto-fill data warga",
+                      style: TextStyle(fontSize: 11, color: ColorsUtils.gray),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          Row(
+            children: [
+              Expanded(
+                child: _buildScanButton(
+                  context: context,
+                  vm: vm,
+                  icon: Icons.camera_alt_outlined,
+                  label: "Kamera",
+                  source: ImageSource.camera,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildScanButton(
+                  context: context,
+                  vm: vm,
+                  icon: Icons.photo_library_outlined,
+                  label: "Galeri",
+                  source: ImageSource.gallery,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScanButton({
+    required BuildContext context,
+    required AddWargaViewModel vm,
+    required IconData icon,
+    required String label,
+    required ImageSource source,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: vm.isScanning ? null : () => vm.scanKTP(source),
+      icon: Icon(icon, size: 18),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: ColorsUtils.b500,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: ColorsUtils.b100,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
+
+  // ── Extraction Feedback ──
+
+  Widget _buildExtractionFeedback(AddWargaViewModel vm) {
+    if (vm.isScanning) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: ColorsUtils.b50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: ColorsUtils.b100),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: ColorsUtils.b500,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                vm.scanStatus,
+                style: const TextStyle(fontSize: 13, color: ColorsUtils.b400),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (vm.scanError != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFCA5A5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    vm.scanError!,
+                    style: const TextStyle(fontSize: 12, color: Color(0xFFDC2626)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: vm.retryScan,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text("Coba Lagi", style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFDC2626),
+                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (vm.scanResult != null && vm.scanResult!.isSuccess) {
+      final r = vm.scanResult!;
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0FDF4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF86EFAC)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 18),
+                SizedBox(width: 8),
+                Text(
+                  "KTP berhasil diekstrak!",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF16A34A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildExtractedField("NIK", r.nik),
+            _buildExtractedField("Nama", r.nama),
+            _buildExtractedField("TTL", r.tempatLahir, extra: r.tanggalLahir?.value),
+            _buildExtractedField("JK", r.jenisKelamin),
+            _buildExtractedField("Gol. Darah", r.golonganDarah),
+            _buildExtractedField("Agama", r.agama),
+            _buildExtractedField("Status", r.statusPerkawinan),
+            _buildExtractedField("Pekerjaan", r.pekerjaan),
+            _buildExtractedField("KWN", r.kewarganegaraan),
+            const SizedBox(height: 4),
+            const Text(
+              "* Silakan periksa & koreksi jika diperlukan",
+              style: TextStyle(
+                fontSize: 10,
+                color: Color(0xFF16A34A),
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildExtractedField(String label, KTPFieldResult? fieldResult, {String? extra}) {
+    final value = extra ?? fieldResult?.value;
+    final confidence = fieldResult?.confidence ?? 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A)),
+            ),
+          ),
+          const Text(": ", style: TextStyle(fontSize: 11, color: Color(0xFF16A34A))),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value ?? "-",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: value != null ? FontWeight.w600 : FontWeight.normal,
+                    color: value != null ? const Color(0xFF166534) : const Color(0xFF86EFAC),
+                  ),
+                ),
+                if (value != null)
+                  Text(
+                    "Confidence: ${(confidence * 100).toInt()}%",
+                    style: const TextStyle(fontSize: 9, color: Color(0xFFA3A3A3)),
+                  ),
+              ],
             ),
           ),
         ],
@@ -315,7 +606,7 @@ class AddWargaPage extends StatelessWidget {
           onPressed: vm.isSaving
               ? null
               : () async {
-                  await vm.saveWarga();
+                  await vm.saveWarga(keluarga);
 
                   if (vm.errorMessage != null) {
                     NotificationUtils.showError(context, vm.errorMessage!);

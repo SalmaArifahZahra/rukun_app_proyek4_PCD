@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rukun_app_proyek4/repositories/kk_repository.dart';
-import 'package:rukun_app_proyek4/services/utils/cloudinary_service.dart';
 import 'package:rukun_app_proyek4/utils/appbar_utils.dart';
 import 'package:rukun_app_proyek4/utils/colors_utils.dart';
 import 'package:rukun_app_proyek4/utils/notification_utils.dart';
@@ -17,7 +16,6 @@ class EditKKPage extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => EditKKViewModel(
         kkRepository: context.read<KKRepository>(),
-        cloudinaryService: context.read<CloudinaryService>(),
         idKK: idKK,
       ),
       child: const _EditKKView(),
@@ -127,6 +125,22 @@ class _EditKKView extends StatelessWidget {
             initialValue: vm.alamat,
             decoration: const InputDecoration(labelText: 'Alamat'),
             onChanged: (value) => vm.alamat = value,
+          ),
+
+          const SizedBox(height: 12),
+
+          TextFormField(
+            initialValue: vm.desa,
+            decoration: const InputDecoration(labelText: 'Desa/Kelurahan'),
+            onChanged: (value) => vm.desa = value,
+          ),
+
+          const SizedBox(height: 12),
+
+          TextFormField(
+            initialValue: vm.kecamatan,
+            decoration: const InputDecoration(labelText: 'Kecamatan'),
+            onChanged: (value) => vm.kecamatan = value,
           ),
 
           const SizedBox(height: 12),

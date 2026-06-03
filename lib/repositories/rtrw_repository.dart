@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:rukun_app_proyek4/models/rt_model.dart';
 import 'package:rukun_app_proyek4/models/rw_model.dart';
-import 'package:rukun_app_proyek4/services/auth_local_service.dart';
+import 'package:rukun_app_proyek4/services/auth/auth_local_service.dart';
 import 'package:rukun_app_proyek4/services/cloud/cloud_rtrw_service.dart';
 
 class RTRWRepository {
@@ -53,20 +53,8 @@ class RTRWRepository {
   ) async {
     try {
       return await fn();
-    } on DioException catch (e) {
-      final data = e.response?.data;
-
-      String message;
-
-      if (data is Map<String, dynamic>) {
-        message = data['message'] ?? "Terjadi kesalahan";
-      } else if (data is String) {
-        message = data;
-      } else {
-        message = "Terjadi kesalahan";
-      }
-
-      throw Exception(message);
+    } on DioException {
+      rethrow;
     } catch (e) {
       throw Exception(e.toString().replaceAll("Exception: ", ""));
     }

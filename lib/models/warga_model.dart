@@ -1,3 +1,5 @@
+import 'package:rukun_app_proyek4/models/keluarga_model.dart';
+
 enum JenisKelamin {
   lakiLaki,
   perempuan;
@@ -215,6 +217,7 @@ class Warga {
   final int? id;
   final String nama;
   final String nik;
+  final String? syncStatus;
 
   final JenisKelamin? jk;
   final String? tempatLahir;
@@ -238,7 +241,7 @@ class Warga {
   final String? namaAyah;
   final String? namaIbu;
 
-  final int? keluargaId;
+  final Keluarga? keluarga;
 
   final DateTime? waktuDibuat;
   final DateTime? waktuDiubah;
@@ -248,6 +251,7 @@ class Warga {
     this.id,
     required this.nama,
     required this.nik,
+    this.syncStatus,
     this.jk,
     this.tempatLahir,
     this.tglLahir,
@@ -264,7 +268,7 @@ class Warga {
     this.noKitap,
     this.namaAyah,
     this.namaIbu,
-    this.keluargaId,
+    this.keluarga,
     this.waktuDibuat,
     this.waktuDiubah,
     this.waktuDihapus,
@@ -275,6 +279,7 @@ class Warga {
       id: json['id'] as int?,
       nama: json['nama'],
       nik: json['nik'],
+      syncStatus: json['sync_status'] as String?,
 
       jk: _parseJenisKelamin(json['jk']),
       agama: _parseAgama(json['agama']),
@@ -285,7 +290,7 @@ class Warga {
 
       tempatLahir: json['tempat_lahir'],
       tglLahir: json['tgl_lahir'] != null
-          ? DateTime.parse(json['tgl_lahir'])
+          ? DateTime.tryParse(json['tgl_lahir'])
           : null,
 
       pendidikan: json['pendidikan'],
@@ -293,7 +298,7 @@ class Warga {
       golonganDarah: json['golongan_darah'],
 
       tglPerkawinan: json['tgl_perkawinan'] != null
-          ? DateTime.parse(json['tgl_perkawinan'])
+          ? DateTime.tryParse(json['tgl_perkawinan'])
           : null,
 
       noPaspor: json['no_paspor'],
@@ -301,16 +306,18 @@ class Warga {
       namaAyah: json['nama_ayah'],
       namaIbu: json['nama_ibu'],
 
-      keluargaId: json['keluarga_id'],
+      keluarga: json['keluarga'] != null
+          ? Keluarga.fromJson(json['keluarga'])
+          : null,
 
       waktuDibuat: json['waktu_dibuat'] != null
-          ? DateTime.parse(json['waktu_dibuat'])
+          ? DateTime.tryParse(json['waktu_dibuat'])
           : null,
       waktuDiubah: json['waktu_diubah'] != null
-          ? DateTime.parse(json['waktu_diubah'])
+          ? DateTime.tryParse(json['waktu_diubah'])
           : null,
       waktuDihapus: json['waktu_dihapus'] != null
-          ? DateTime.parse(json['waktu_dihapus'])
+          ? DateTime.tryParse(json['waktu_dihapus'])
           : null,
     );
   }
@@ -320,6 +327,7 @@ class Warga {
       'id': id,
       'nama': nama,
       'nik': nik,
+      'sync_status': syncStatus,
 
       'jk': _jkToString(jk),
       'tempat_lahir': tempatLahir,
@@ -346,9 +354,11 @@ class Warga {
       'nama_ayah': namaAyah,
       'nama_ibu': namaIbu,
 
-      'keluarga_id': keluargaId,
+      'keluarga_id': keluarga?.id,
     };
   }
+
+  bool get isPendingSync => syncStatus == 'pending';
 
   static JenisKelamin? _parseJenisKelamin(String? value) {
     switch (value) {

@@ -5,18 +5,15 @@ import 'package:image_picker/image_picker.dart';
 import 'package:rukun_app_proyek4/models/keluarga_model.dart';
 import 'package:rukun_app_proyek4/repositories/kk_repository.dart';
 import 'package:rukun_app_proyek4/services/pcd/kk_extraction_service_v2.dart';
-import 'package:rukun_app_proyek4/services/utils/cloudinary_service.dart';
 
 class AddKKViewModel extends ChangeNotifier {
   final KKRepository kkRepository;
-  final CloudinaryService cloudinaryService;
   final int rtId;
   File? fotoKK;
 
   AddKKViewModel({
     required this.kkRepository,
     required this.rtId,
-    required this.cloudinaryService,
   });
 
   bool isSaving = false;
@@ -34,11 +31,16 @@ class AddKKViewModel extends ChangeNotifier {
   String noKK = '';
   String alamat = '';
   String kodePos = '';
+  String desa = '';
+  String kecamatan = '';
+  String rtRwInfo = '';
 
   // Text controllers untuk sinkronisasi dua arah dengan form
   final noKKController = TextEditingController();
   final alamatController = TextEditingController();
   final kodePosController = TextEditingController();
+  final desaController = TextEditingController();
+  final kecamatanController = TextEditingController();
 
   // ──────────────────────────────────────────────
   // Image Picking
@@ -150,6 +152,17 @@ class AddKKViewModel extends ChangeNotifier {
       kodePos = result.kodePos!.value!;
       kodePosController.text = result.kodePos!.value!;
     }
+    if (result.desaKelurahan?.value != null) {
+      desa = result.desaKelurahan!.value!;
+      desaController.text = result.desaKelurahan!.value!;
+    }
+    if (result.kecamatan?.value != null) {
+      kecamatan = result.kecamatan!.value!;
+      kecamatanController.text = result.kecamatan!.value!;
+    }
+    if (result.rtRw?.value != null) {
+      rtRwInfo = result.rtRw!.value!;
+    }
 
     // Build detailed status message dengan confidence scores
     _buildDetailedExtractionStatus(result);
@@ -159,14 +172,14 @@ class AddKKViewModel extends ChangeNotifier {
   void _buildDetailedExtractionStatus(KKExtractionOutputV2 result) {
     final buffer = StringBuffer();
 
-    buffer.writeln('✅ Ekstraksi Selesai');
+    buffer.writeln('Ekstraksi Selesai');
     buffer.writeln('');
     buffer.writeln(
-      '📊 Kualitas Gambar: ${(result.qualityScore * 100).toStringAsFixed(0)}%',
+      'Kualitas Gambar: ${(result.qualityScore * 100).toStringAsFixed(0)}%',
     );
     if (result.perspectiveScore > 0) {
       buffer.writeln(
-        '📐 Koreksi Perspektif: ${(result.perspectiveScore * 100).toStringAsFixed(0)}%',
+        'Koreksi Perspektif: ${(result.perspectiveScore * 100).toStringAsFixed(0)}%',
       );
     }
     buffer.writeln('');
@@ -174,25 +187,40 @@ class AddKKViewModel extends ChangeNotifier {
 
     // List hasil ekstraksi dengan confidence
     if (result.nomorKK?.value != null) {
-      buffer.writeln('  • No. KK: ${(result.nomorKK!.confidence * 100).toInt()}%');
+      buffer.writeln('  No. KK: ${(result.nomorKK!.confidence * 100).toInt()}%');
     }
     if (result.alamat?.value != null) {
       buffer.writeln(
-        '  • Alamat: ${(result.alamat!.confidence * 100).toInt()}%',
+        '  Alamat: ${(result.alamat!.confidence * 100).toInt()}%',
       );
     }
     if (result.kodePos?.value != null) {
       buffer.writeln(
-        '  • Kode Pos: ${(result.kodePos!.confidence * 100).toInt()}%',
+        '  Kode Pos: ${(result.kodePos!.confidence * 100).toInt()}%',
+      );
+    }
+    if (result.rtRw?.value != null) {
+      buffer.writeln(
+        '  RT/RW: ${(result.rtRw!.confidence * 100).toInt()}%',
+      );
+    }
+    if (result.desaKelurahan?.value != null) {
+      buffer.writeln(
+        '  Desa/Kelurahan: ${(result.desaKelurahan!.confidence * 100).toInt()}%',
+      );
+    }
+    if (result.kecamatan?.value != null) {
+      buffer.writeln(
+        '  Kecamatan: ${(result.kecamatan!.confidence * 100).toInt()}%',
       );
     }
 
     // Show validation errors / warnings jika ada
     if (result.warnings.isNotEmpty) {
       buffer.writeln('');
-      buffer.writeln('⚠️  Warnings:');
+      buffer.writeln('Warnings:');
       for (final w in result.warnings) {
-        buffer.writeln('  • $w');
+        buffer.writeln('  - $w');
       }
     }
 
@@ -209,28 +237,19 @@ class AddKKViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      String? fotoUrl;
-
-      if (fotoKK != null) {
-        fotoUrl = await cloudinaryService.uploadFile(
-          fotoKK!,
-          folder: 'kartukeluarga',
-        );
-
-        if (fotoUrl == null) {
-          throw Exception("Gagal upload foto KK");
-        }
-      }
-
       final data = Keluarga(
         noKK: noKK,
         rtId: rtId,
         alamat: alamat,
         kodePos: kodePos,
-        imgRef: fotoUrl,
+        desa: desa,
+        kecamatan: kecamatan,
       );
 
-      await kkRepository.createKK(data);
+      // Pass local foto path - upload will happen during sync
+      final localFotoPath = fotoKK?.path;
+
+      await kkRepository.createKK(data, localFotoPath: localFotoPath);
 
       isKKSaved = true;
     } catch (e) {
@@ -246,6 +265,8 @@ class AddKKViewModel extends ChangeNotifier {
     noKKController.dispose();
     alamatController.dispose();
     kodePosController.dispose();
+    desaController.dispose();
+    kecamatanController.dispose();
     super.dispose();
   }
 }

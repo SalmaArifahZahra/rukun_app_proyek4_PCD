@@ -24,10 +24,16 @@ android {
         applicationId = "com.example.rukun_app_proyek4"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // WorkManager requires a sufficiently recent runtime; pin minSdk to 23 to
+        // ensure background scheduling behaves reliably across devices.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    dependencies {
+        implementation("androidx.work:work-runtime-ktx:2.8.1")
     }
 
     buildTypes {

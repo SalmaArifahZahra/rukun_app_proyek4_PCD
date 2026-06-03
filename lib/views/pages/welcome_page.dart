@@ -28,11 +28,10 @@ class WelcomePage extends StatelessWidget {
                           height: 190,
                         ),
                       ),
-
                       const SizedBox(height: 80),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: const Text(
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12),
+                        child: Text(
                           "Selamat Datang\ndi RukunApp",
                           style: TextStyle(
                             color: ColorsUtils.white,
@@ -41,21 +40,18 @@ class WelcomePage extends StatelessWidget {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 12),
-                        child: const Text(
+                      const Padding(
+                        padding: EdgeInsets.only(left: 12),
+                        child: Text(
                           "Pantau data penduduk, kelola iuran, dan informasi RT/RW dalam satu aplikasi",
                           style: TextStyle(
                             color: ColorsUtils.white,
                             fontSize: 15,
-                            fontWeight: FontWeight.normal,
                           ),
                         ),
                       ),
-
-                      SizedBox(height: 80),
+                      const SizedBox(height: 80),
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -79,9 +75,7 @@ class WelcomePage extends StatelessWidget {
                           child: const Text("Masuk"),
                         ),
                       ),
-
                       const SizedBox(height: 12),
-
                       SizedBox(
                         width: double.infinity,
                         height: 52,
@@ -105,7 +99,6 @@ class WelcomePage extends StatelessWidget {
                           child: const Text("Daftar"),
                         ),
                       ),
-
                       const SizedBox(height: 30),
                     ],
                   ),

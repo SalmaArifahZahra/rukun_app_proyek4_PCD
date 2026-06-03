@@ -39,7 +39,7 @@ class _LoginPageState extends State<LoginPage> {
     final vm = context.watch<AuthViewModel>();
 
     return Scaffold(
-      backgroundColor: ColorsUtils.white,
+      backgroundColor: ColorsUtils.lightgray,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -98,14 +98,14 @@ class _LoginPageState extends State<LoginPage> {
               if (vm.errorMessage != null)
                 Text(
                   vm.errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: ColorsUtils.red),
                 ),
               if (vm.isLocked)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
                     "Tunggu ${vm.lockSeconds} detik sebelum mencoba lagi",
-                    style: const TextStyle(color: Colors.orange),
+                    style: const TextStyle(color: ColorsUtils.o100),
                   ),
                 ),
 
@@ -148,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            color: Colors.white,
+                            color: ColorsUtils.white,
                             strokeWidth: 2,
                           ),
                         )
@@ -176,12 +176,12 @@ class _LoginPageState extends State<LoginPage> {
                   child: const Text.rich(
                     TextSpan(
                       text: "Belum punya akun? ",
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: ColorsUtils.gray),
                       children: [
                         TextSpan(
                           text: "Daftar di sini",
                           style: TextStyle(
-                            color: Colors.blue,
+                            color: ColorsUtils.b200,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -215,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
           : null,
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.grey),
+        prefixIcon: Icon(icon, color: ColorsUtils.gray),
 
         suffixIcon: isPassword
             ? IconButton(
@@ -227,7 +227,7 @@ class _LoginPageState extends State<LoginPage> {
             : null,
 
         filled: true,
-        fillColor: Colors.grey.shade100,
+        fillColor: ColorsUtils.white,
         contentPadding: const EdgeInsets.symmetric(vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

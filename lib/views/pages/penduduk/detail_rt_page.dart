@@ -6,11 +6,11 @@ import 'package:rukun_app_proyek4/models/rt_model.dart';
 import 'package:rukun_app_proyek4/models/rw_model.dart';
 import 'package:rukun_app_proyek4/models/user_model.dart';
 import 'package:rukun_app_proyek4/repositories/kk_repository.dart';
-import 'package:rukun_app_proyek4/services/utils/cloudinary_service.dart';
 import 'package:rukun_app_proyek4/utils/appbar_utils.dart';
 import 'package:rukun_app_proyek4/utils/colors_utils.dart';
 import 'package:rukun_app_proyek4/viewmodels/penduduk/kartukeluarga/add_kk_viewmodel.dart';
 import 'package:rukun_app_proyek4/viewmodels/penduduk/detail_rt_viewmodel.dart';
+import 'package:rukun_app_proyek4/viewmodels/export_data_viewmodel.dart';
 import 'package:rukun_app_proyek4/views/pages/penduduk/crudkk/add_kk_page.dart';
 import 'package:rukun_app_proyek4/views/pages/penduduk/detail_kk_page.dart';
 
@@ -193,7 +193,7 @@ class _DetailRTPageState extends State<DetailRTPage> with RouteAware {
           MaterialPageRoute(
             builder: (_) => DetailKKPage(
               kkId: kk.id!,
-              currentUserKKId: widget.currentUser.warga?.keluargaId,
+              currentUserKKId: widget.currentUser.warga?.keluarga?.id,
               currentUserWargaId: widget.currentUser.wargaId,
             ),
           ),
@@ -235,6 +235,37 @@ class _DetailRTPageState extends State<DetailRTPage> with RouteAware {
               ),
             ),
 
+            Consumer<ExportDataViewModel>(
+              builder: (context, vm, child) {
+                return IconButton(
+                  icon: const Icon(Icons.download, color: ColorsUtils.b500),
+                  tooltip: 'Export KK',
+                  onPressed: vm.isExporting
+                      ? null
+                      : () async {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Memproses file Excel...")),
+                          );
+                          final success = await vm.exportDataPerKeluarga(kk);
+                          if (context.mounted) {
+                            if (success) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Berhasil mengekspor data KK!")),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(vm.errorMessage ?? "Gagal mengekspor data"),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                );
+              },
+            ),
+
             const Icon(Icons.chevron_right, color: ColorsUtils.gray),
           ],
         ),
@@ -253,7 +284,6 @@ class _DetailRTPageState extends State<DetailRTPage> with RouteAware {
               builder: (context) => ChangeNotifierProvider(
                 create: (_) => AddKKViewModel(
                   kkRepository: context.read<KKRepository>(),
-                  cloudinaryService: context.read<CloudinaryService>(),
                   rtId: widget.rt.id!,
                 ),
                 child: const AddKKPage(),

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:rukun_app_proyek4/helpers/log_helper.dart';
 import 'package:rukun_app_proyek4/models/auth_response_model.dart';
@@ -139,6 +140,19 @@ class AuthViewModel extends ChangeNotifier {
     } catch (e, st) {
       debugPrint("AUTH ERROR: $e");
 
+      if (_isNetworkError(e)) {
+        final token = await _authRepository.getToken();
+        final cachedUser = await _authRepository.getCachedUser();
+        if (token != null && cachedUser != null) {
+          authData = AuthResponse(token: token, user: cachedUser);
+          debugPrint("AUTH FALLBACK TO CACHED USER");
+        } else {
+          authData = null;
+        }
+      } else {
+        authData = null;
+      }
+
       await LogHelper.writeLog(
         "CheckAuth gagal: $e",
         source: "AuthViewModel.checkAuth",
@@ -146,7 +160,6 @@ class AuthViewModel extends ChangeNotifier {
         error: e,
         stackTrace: st,
       );
-      authData = null;
     } finally {
       isLoading = false;
 
@@ -154,6 +167,25 @@ class AuthViewModel extends ChangeNotifier {
 
       debugPrint("CHECK AUTH DONE");
     }
+  }
+
+  bool _isNetworkError(Object error) {
+    if (error is DioException) {
+      return switch (error.type) {
+        DioExceptionType.connectionError ||
+        DioExceptionType.connectionTimeout ||
+        DioExceptionType.receiveTimeout ||
+        DioExceptionType.sendTimeout ||
+        DioExceptionType.unknown => true,
+        _ => false,
+      };
+    }
+
+    final message = error.toString().toLowerCase();
+    return message.contains('socketexception') ||
+        message.contains('failed host lookup') ||
+        message.contains('connection refused') ||
+        message.contains('network is unreachable');
   }
 
   void _onLoginFailed(String message) {

@@ -2,6 +2,7 @@ class RtModel {
   final int? id;
   final String noRt;
   final int rwId;
+  final int saldoKas;
 
   final String? ketua;
   final String? bendahara;
@@ -15,6 +16,7 @@ class RtModel {
     this.id,
     required this.noRt,
     required this.rwId,
+    required this.saldoKas,
     this.ketua,
     this.bendahara,
     this.totalKeluarga,
@@ -28,6 +30,7 @@ class RtModel {
       id: json['id'],
       noRt: json['no_rt'],
       rwId: json['rw_id'],
+      saldoKas: json['saldo_kas'],
 
       ketua: json['ketua'],
       bendahara: json['bendahara'],
@@ -55,6 +58,7 @@ class RtModel {
       'id': id,
       'no_rt': noRt,
       'rw_id': rwId,
+      'saldo_kas': saldoKas,
       'ketua': ketua,
       'bendahara': bendahara,
       'total_keluarga': totalKeluarga,

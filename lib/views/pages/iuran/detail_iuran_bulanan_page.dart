@@ -6,6 +6,7 @@ import 'package:rukun_app_proyek4/models/iuran/keluarga_status_model.dart';
 import 'package:rukun_app_proyek4/models/transaksi_model.dart';
 import 'package:rukun_app_proyek4/models/user_model.dart';
 import 'package:rukun_app_proyek4/utils/appbar_utils.dart';
+import 'package:rukun_app_proyek4/utils/colors_utils.dart';
 import 'package:rukun_app_proyek4/utils/notification_utils.dart';
 import 'package:rukun_app_proyek4/viewmodels/iuran/iuran_bulanan_detail_viewmodel.dart';
 
@@ -46,7 +47,7 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
     final monthLabel = DateFormat('MMMM yyyy', 'id_ID').format(widget.month);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: ColorsUtils.lightgray,
 
       appBar: AppBarUtils.buildAppBar(
         context: context,
@@ -120,9 +121,9 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
 
           Row(
             children: [
-              _badge(iuran.level.name.toUpperCase(), Colors.grey),
+              _badge(iuran.level.name.toUpperCase(), ColorsUtils.gray),
               const SizedBox(width: 8),
-              _badge(iuran.tipe.name.toUpperCase(), Colors.green),
+              _badge(iuran.tipe.name.toUpperCase(), ColorsUtils.green),
             ],
           ),
 
@@ -159,7 +160,7 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ColorsUtils.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -185,7 +186,7 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ColorsUtils.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -225,7 +226,7 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
     return _card(
       child: Row(
         children: [
-          const Icon(Icons.calendar_month, color: Colors.blue),
+          const Icon(Icons.calendar_month, color: ColorsUtils.b200),
           const SizedBox(width: 10),
           Text(
             "Periode: $label",
@@ -264,19 +265,44 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: ColorsUtils.o100,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.orange.shade200),
+                border: Border.all(color: ColorsUtils.o100),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    k.keluarga.noKK,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          k.keluarga.noKK,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      if (k.idTransaksi != null && k.idTransaksi! < 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'Sinkronisasi',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
 
                   const SizedBox(height: 6),
@@ -284,7 +310,7 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
                   const Text(
                     "STATUS: DIPROSES",
                     style: TextStyle(
-                      color: Colors.orange,
+                      color: ColorsUtils.o100,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -336,8 +362,8 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
                         Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
+                              backgroundColor: ColorsUtils.red,
+                              foregroundColor: ColorsUtils.white,
                             ),
                             onPressed: () {
                               final alasanController = TextEditingController();
@@ -384,8 +410,8 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
 
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          foregroundColor: Colors.white,
+                                          backgroundColor: ColorsUtils.red,
+                                          foregroundColor: ColorsUtils.white,
                                         ),
                                         onPressed: () async {
                                           final alasan = alasanController.text
@@ -452,8 +478,8 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
                         Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
+                              backgroundColor: ColorsUtils.green,
+                              foregroundColor: ColorsUtils.white,
                             ),
                             onPressed: () {
                               showDialog(
@@ -476,8 +502,8 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
 
                                       ElevatedButton(
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.green,
-                                          foregroundColor: Colors.white,
+                                          backgroundColor: ColorsUtils.green,
+                                          foregroundColor: ColorsUtils.white,
                                         ),
                                         onPressed: () async {
                                           final vm = context
@@ -534,7 +560,7 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.grey.shade300,
+            color: ColorsUtils.gray.withOpacity(0.5),
           ),
 
           const SizedBox(height: 24),
@@ -553,15 +579,40 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: ColorsUtils.white,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  k.keluarga.noKK,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        k.keluarga.noKK,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    if (k.idTransaksi != null && k.idTransaksi! < 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Sinkronisasi',
+                          style: TextStyle(
+                            color: Colors.orange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
 
                 const SizedBox(height: 6),
@@ -569,7 +620,7 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
                 Text(
                   k.sudahBayar ? "LUNAS" : "BELUM",
                   style: TextStyle(
-                    color: k.sudahBayar ? Colors.green : Colors.red,
+                    color: k.sudahBayar ? ColorsUtils.green : ColorsUtils.red,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -624,7 +675,7 @@ class _DetailIuranBulananPageState extends State<DetailIuranBulananPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ColorsUtils.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: child,
@@ -680,7 +731,7 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.blue),
+          Icon(icon, size: 16, color: ColorsUtils.b200),
           const SizedBox(width: 8),
           Expanded(child: Text(text)),
         ],

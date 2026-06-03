@@ -17,7 +17,9 @@ class _BottomNavState extends State<BottomNav> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
+      extendBody: true,
       body: widget.items[_page].page,
 
       bottomNavigationBar: CurvedNavigationBar(

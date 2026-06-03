@@ -5,19 +5,24 @@ import 'package:rukun_app_proyek4/models/iuran/iuran_model.dart';
 import 'package:rukun_app_proyek4/models/transaksi_model.dart';
 import 'package:rukun_app_proyek4/models/user_model.dart';
 import 'package:rukun_app_proyek4/utils/appbar_utils.dart';
+import 'package:rukun_app_proyek4/utils/colors_utils.dart';
 import 'package:rukun_app_proyek4/viewmodels/iuran/iuran_rt_detail_viewmodel.dart';
 import 'package:rukun_app_proyek4/views/pages/iuran/detail_iuran_bulanan_page.dart';
+import 'package:rukun_app_proyek4/views/pages/iuran/widgets/setoran_approval_modal.dart';
+import 'package:rukun_app_proyek4/views/pages/iuran/widgets/setoran_form_modal.dart';
 
 class IuranRTDetailPage extends StatefulWidget {
   final int iuranId;
   final int rtId;
   final User user;
+  final bool showSetoranButton;
 
   const IuranRTDetailPage({
     super.key,
     required this.iuranId,
     required this.rtId,
-    required this.user
+    required this.user,
+    this.showSetoranButton = false,
   });
 
   @override
@@ -29,19 +34,27 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
   void initState() {
     super.initState();
 
-    Future.microtask(() {
-      context.read<IuranRTDetailViewModel>().fetchDetail(
-        widget.iuranId,
-        widget.rtId,
-      );
+    Future.microtask(() async {
+      final vm = context.read<IuranRTDetailViewModel>();
+
+      await vm.fetchDetail(widget.iuranId, widget.rtId);
+
+      final iuran = vm.iuran;
+      if (iuran == null) return;
+
+      final startDate = iuran.waktuDibuat ?? DateTime.now();
+      final months = generateMonths(startDate);
+
+      for (final month in months) {
+        await vm.loadSetoranPeriode(widget.iuranId, widget.rtId, month);
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-
+      backgroundColor: ColorsUtils.lightgray,
       appBar: AppBarUtils.buildAppBar(
         context: context,
         name: "",
@@ -51,9 +64,13 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
         showAvatar: false,
         showGreeting: false,
       ),
-
       body: Consumer<IuranRTDetailViewModel>(
         builder: (context, vm, _) {
+          final iuran = vm.iuran;
+          final level = widget.user.pengurus?.level.toLowerCase();
+          final isRTUser = level == "rt";
+          final isRWUser = level == "rw";
+
           if (vm.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -62,14 +79,13 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
             return Center(child: Text(vm.errorMessage!));
           }
 
-          final iuran = vm.iuran;
-          final transaksi = vm.transaksi;
-
           if (iuran == null) {
             return const Center(child: Text("Data tidak ditemukan"));
           }
 
           final rt = vm.rtDetail;
+
+          final transaksi = vm.transaksi;
 
           final startDate = iuran.waktuDibuat ?? DateTime.now();
           final months = generateMonths(startDate);
@@ -79,15 +95,10 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
             child: Column(
               children: [
                 _buildSummaryCard(iuran: iuran, terkumpul: vm.totalTerkumpul),
-
                 const SizedBox(height: 16),
-
                 _buildInfoGrid(iuran),
-
                 const SizedBox(height: 16),
-
                 if (rt != null) _buildRtInfo(rt),
-
                 const SizedBox(height: 16),
 
                 _buildMonthlyList(
@@ -96,6 +107,8 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
                   rt?.totalKeluarga ?? 0,
                   rt?.id ?? 0,
                   iuran.id ?? 0,
+                  isRTUser,
+                  isRWUser,
                 ),
               ],
             ),
@@ -110,7 +123,7 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ColorsUtils.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -120,26 +133,19 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
             iuran.nama,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 12),
-
           Row(
             children: [
-              _buildBadge(iuran.level.name.toUpperCase(), Colors.grey),
-
+              _buildBadge(iuran.level.name.toUpperCase(), ColorsUtils.gray),
               const SizedBox(width: 8),
-
-              _buildBadge(iuran.tipe.name.toUpperCase(), Colors.green),
+              _buildBadge(iuran.tipe.name.toUpperCase(), ColorsUtils.green),
             ],
           ),
-
           const SizedBox(height: 14),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _MiniStat(title: "Total Terkumpul", value: "Rp.$terkumpul"),
-
               _MiniStat(title: "Biaya Iuran", value: "Rp.${iuran.jumlah}"),
             ],
           ),
@@ -151,7 +157,6 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
   Widget _buildInfoGrid(Iuran iuran) {
     String waktuDibuatText() {
       if (iuran.waktuDibuat == null) return "-";
-
       return DateFormat('dd MMMM yyyy', 'id_ID').format(iuran.waktuDibuat!);
     }
 
@@ -159,7 +164,6 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
       if (iuran.tipe == IuranType.insidentil) {
         return "Iuran bersifat insidentil, sekali bayar dan seikhlasnya";
       }
-
       return "Iuran bersifat reguler dan dibayarkan secara berkala";
     }
 
@@ -167,7 +171,7 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ColorsUtils.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -177,11 +181,8 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
             "Informasi Iuran",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 12),
-
           _InfoRow(icon: Icons.event, text: "Dibuat: ${waktuDibuatText()}"),
-
           _InfoRow(icon: Icons.info, text: tipeText()),
         ],
       ),
@@ -193,7 +194,7 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: ColorsUtils.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
@@ -203,21 +204,16 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
             "Informasi RT",
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-
           const SizedBox(height: 12),
-
           _InfoRow(
             icon: Icons.home_work_outlined,
             text: "RT ${rt.noRt ?? '-'}",
           ),
-
           _InfoRow(icon: Icons.person, text: "Ketua: ${rt.ketua ?? '-'}"),
-
           _InfoRow(
             icon: Icons.account_balance_wallet_outlined,
             text: "Bendahara: ${rt.bendahara ?? '-'}",
           ),
-
           _InfoRow(
             icon: Icons.groups_outlined,
             text: "Total Keluarga: ${rt.totalKeluarga ?? 0}",
@@ -233,6 +229,8 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
     int totalKeluarga,
     int rtId,
     int iuranId,
+    bool isRTUser,
+    bool isRWUser,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,9 +240,9 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
-
         ...months.map((month) {
           final label = DateFormat('MMMM yyyy', 'id_ID').format(month);
+          final vm = context.read<IuranRTDetailViewModel>();
 
           final transaksiBulan = transaksi.where((t) {
             final tDate = t.waktuBayar;
@@ -264,9 +262,33 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
 
           final progress = "$jumlahPembayar/$totalKeluarga";
 
+          final key = vm.periodeKey(iuranId, rtId, month);
+          final setoran = vm.setoranPerPeriode[key];
+
+          final status = setoran?.status;
+          final isLocalPending = setoran?.id != null && (setoran!.id! < 0);
+          final isBelumSetor = setoran == null;
+          final isPending = status == "Dikirim";
+          final isApproved = status == "Diterima";
+          final isRejected = status == "Ditolak";
+
+          Color statusColor() {
+            if (isApproved) return Colors.green;
+            if (isPending) return Colors.orange;
+            if (isRejected) return Colors.red;
+            return Colors.red;
+          }
+
+          String statusText() {
+            if (isApproved) return "DISETUJUI";
+            if (isPending) return "SUDAH SETOR";
+            if (isRejected) return "DITOLAK";
+            return "BELUM SETOR";
+          }
+
           return InkWell(
-            onTap: () {
-              Navigator.push(
+            onTap: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => DetailIuranBulananPage(
@@ -277,12 +299,19 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
                   ),
                 ),
               );
+
+              if (context.mounted) {
+                context.read<IuranRTDetailViewModel>().fetchDetail(
+                  widget.iuranId,
+                  widget.rtId,
+                );
+              }
             },
             child: Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: ColorsUtils.white,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -292,8 +321,7 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
                     label,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
-
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -304,6 +332,129 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 6),
+
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor().withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          statusText(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor(),
+                          ),
+                        ),
+                      ),
+                      if (isLocalPending) ...[
+                        const SizedBox(width: 8),
+                        _buildBadge('Sinkronisasi', Colors.orange),
+                      ],
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+                  if (isRTUser || isRWUser)
+                    Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: Icon(
+                          isBelumSetor
+                              ? Icons.account_balance_wallet
+                              : isPending
+                              ? Icons.hourglass_bottom
+                              : Icons.visibility,
+                        ),
+
+                        label: Text(
+                          isBelumSetor
+                              ? (isRWUser ? "Review Setoran" : "Setor ke RW")
+                              : isPending
+                              ? (isRWUser
+                                    ? "Review Setoran"
+                                    : "Menunggu Approval")
+                              : (isRWUser
+                                    ? "Lihat & Approval"
+                                    : "Lihat Detail"),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.shade600,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final vm = context.read<IuranRTDetailViewModel>();
+
+                          if (isRWUser) {
+                            await showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => SetoranApprovalModal(
+                                label: label,
+                                month: month,
+                                iuranId: iuranId,
+                                rtId: rtId,
+                                jumlahPembayar: jumlahPembayar,
+                                totalPendapatan: totalPendapatan,
+                                saldoKasRt: vm.saldoKasRt,
+                                detailSetoran: setoran,
+                              ),
+                            );
+                            return;
+                          }
+
+                          // RT FLOW
+                          if (!isBelumSetor) {
+                            await showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => SetoranFormModal(
+                                isDetail: true,
+                                label: label,
+                                month: month,
+                                iuranId: iuranId,
+                                rtId: rtId,
+                                jumlahPembayar: jumlahPembayar,
+                                totalPendapatan: totalPendapatan,
+                                saldoKasRt: vm.saldoKasRt,
+                                detailSetoran: setoran,
+                              ),
+                            );
+                            return;
+                          }
+
+                          await showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => SetoranFormModal(
+                              isDetail: false,
+                              label: label,
+                              month: month,
+                              iuranId: iuranId,
+                              rtId: rtId,
+                              jumlahPembayar: jumlahPembayar,
+                              totalPendapatan: totalPendapatan,
+                              saldoKasRt: vm.saldoKasRt,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -339,7 +490,6 @@ class _IuranRTDetailPageState extends State<IuranRTDetailPage> {
 
     while (current.isBefore(DateTime(now.year, now.month + 1))) {
       months.add(current);
-
       current = DateTime(current.year, current.month + 1);
     }
 
@@ -358,10 +508,7 @@ class _MiniStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-
-        const SizedBox(height: 4),
-
+        Text(title, style: const TextStyle(fontSize: 12)),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
     );
@@ -379,15 +526,10 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: Colors.blue),
-
+          Icon(icon, size: 16, color: ColorsUtils.b200),
           const SizedBox(width: 8),
-
-          Expanded(
-            child: Text(text, softWrap: true, overflow: TextOverflow.visible),
-          ),
+          Expanded(child: Text(text)),
         ],
       ),
     );

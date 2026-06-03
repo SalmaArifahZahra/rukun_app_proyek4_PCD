@@ -4,17 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rukun_app_proyek4/models/keluarga_model.dart';
 import 'package:rukun_app_proyek4/repositories/kk_repository.dart';
-import 'package:rukun_app_proyek4/services/utils/cloudinary_service.dart';
 
 class EditKKViewModel extends ChangeNotifier {
   final KKRepository kkRepository;
-  final CloudinaryService cloudinaryService;
 
   final int idKK;
 
   EditKKViewModel({
     required this.kkRepository,
-    required this.cloudinaryService,
     required this.idKK,
   }) {
     getDetailKK();
@@ -35,6 +32,8 @@ class EditKKViewModel extends ChangeNotifier {
   String noKK = '';
   String alamat = '';
   String kodePos = '';
+  String desa = '';
+  String kecamatan = '';
 
   Future<void> getDetailKK() async {
     try {
@@ -54,6 +53,8 @@ class EditKKViewModel extends ChangeNotifier {
       noKK = result.noKK;
       alamat = result.alamat ?? '';
       kodePos = result.kodePos ?? '';
+      desa = result.desa ?? '';
+      kecamatan = result.kecamatan ?? '';
 
       fotoKKUrl = result.imgRef;
     } catch (e) {
@@ -90,16 +91,6 @@ class EditKKViewModel extends ChangeNotifier {
 
       notifyListeners();
 
-      String? fotoUrl = fotoKKUrl;
-
-      if (fotoKK != null) {
-        fotoUrl = await cloudinaryService.uploadFile(fotoKK!, folder: 'kartukeluarga');
-
-        if (fotoUrl == null) {
-          throw Exception("Gagal upload foto KK baru");
-        }
-      }
-
       if (kk == null) {
         throw Exception("Data KK belum dimuat");
       }
@@ -108,8 +99,15 @@ class EditKKViewModel extends ChangeNotifier {
         "no_kk": noKK,
         "alamat": alamat,
         "kode_pos": kodePos,
-        "img_referensi": fotoUrl,
+        "desa": desa,
+        "kecamatan": kecamatan,
+        "img_referensi": fotoKKUrl,
       };
+
+      // If there's a new photo, include local path for sync upload
+      if (fotoKK != null) {
+        data['local_foto_path'] = fotoKK!.path;
+      }
 
       await kkRepository.updateKK(idKK, data);
     } catch (e) {

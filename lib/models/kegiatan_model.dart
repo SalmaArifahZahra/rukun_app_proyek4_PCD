@@ -1,6 +1,22 @@
+import 'package:rukun_app_proyek4/models/rt_model.dart';
+import 'package:rukun_app_proyek4/models/rw_model.dart';
+
 enum KegiatanLevel { rt, rw }
 
-enum KegiatanStatus { dibuat, ditunda, dibatalkan, selesai }
+enum KegiatanStatus { dibuat, dibatalkan, selesai }
+
+extension KegiatanStatusX on KegiatanStatus {
+  String get label {
+    switch (this) {
+      case KegiatanStatus.dibuat:
+        return "Dibuat";
+      case KegiatanStatus.dibatalkan:
+        return "Dibatalkan";
+      case KegiatanStatus.selesai:
+        return "Selesai";
+    }
+  }
+}
 
 class Kegiatan {
   final int? id;
@@ -17,6 +33,8 @@ class Kegiatan {
   final DateTime? waktuDibuat;
   final DateTime? waktuDiubah;
   final DateTime? waktuDihapus;
+  final RtModel? rt;
+  final RwModel? rw;
 
   Kegiatan({
     this.id,
@@ -33,6 +51,8 @@ class Kegiatan {
     this.waktuDibuat,
     this.waktuDiubah,
     this.waktuDihapus,
+    this.rt,
+    this.rw,
   });
 
   factory Kegiatan.fromJson(Map<String, dynamic> json) {
@@ -59,26 +79,32 @@ class Kegiatan {
       waktuDihapus: json['waktu_dihapus'] != null
           ? DateTime.parse(json['waktu_dihapus'])
           : null,
+      rt: json['rt'] != null ? RtModel.fromJson(json['rt']) : null,
+      rw: json['rw'] != null ? RwModel.fromJson(json['rw']) : null,
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({bool includeNull = false}) {
     final data = {
       'nama': nama,
       'deskripsi': deskripsi,
-      'tanggal_mulai': tanggalMulai.toUtc().toIso8601String(),
-      'tanggal_selesai': tanggalSelesai?.toUtc().toIso8601String(),
+      'tanggal_mulai': tanggalMulai.toIso8601String(),
+      'tanggal_selesai': tanggalSelesai?.toIso8601String(),
       'level': level == KegiatanLevel.rt ? 'RT' : 'RW',
       'rt_id': rtId,
       'rw_id': rwId,
       'status': _statusToString(status),
-      'img_referensi': imgReferensi,
-      'doc_referensi': docReferensi,
     };
 
-    if (id != null) {
-      data['id'] = id;
+    if (includeNull) {
+      data['img_referensi'] = imgReferensi;
+      data['doc_referensi'] = docReferensi;
+    } else {
+      if (imgReferensi != null) data['img_referensi'] = imgReferensi;
+      if (docReferensi != null) data['doc_referensi'] = docReferensi;
     }
+
+    if (id != null) data['id'] = id;
 
     return data;
   }
@@ -90,19 +116,28 @@ class Kegiatan {
     return now.isAfter(tanggalMulai) && now.isBefore(tanggalSelesai!);
   }
 
-  static KegiatanLevel _level(String v) =>
-      v == "RT" ? KegiatanLevel.rt : KegiatanLevel.rw;
+  static KegiatanLevel _level(String v) {
+    switch (v.toUpperCase()) {
+      case "RT":
+        return KegiatanLevel.rt;
+      case "RW":
+        return KegiatanLevel.rw;
+      default:
+        return KegiatanLevel.rw;
+    }
+  }
 
   static KegiatanStatus _status(String v) {
-    switch (v) {
-      case "Dibuat":
+    switch (v.toLowerCase()) {
+      case "dibuat":
         return KegiatanStatus.dibuat;
-      case "Ditunda":
-        return KegiatanStatus.ditunda;
-      case "Dibatalkan":
+      case "dibatalkan":
+      case "ditunda":
         return KegiatanStatus.dibatalkan;
-      default:
+      case "selesai":
         return KegiatanStatus.selesai;
+      default:
+        return KegiatanStatus.dibuat;
     }
   }
 
@@ -110,8 +145,6 @@ class Kegiatan {
     switch (status) {
       case KegiatanStatus.dibuat:
         return "Dibuat";
-      case KegiatanStatus.ditunda:
-        return "Ditunda";
       case KegiatanStatus.dibatalkan:
         return "Dibatalkan";
       case KegiatanStatus.selesai:

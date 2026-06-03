@@ -324,6 +324,9 @@ class AddKKPage extends StatelessWidget {
             const SizedBox(height: 8),
             _buildExtractedField("No. KK", r.nomorKK),
             _buildExtractedField("Alamat", r.alamat),
+            _buildExtractedField("RT/RW", r.rtRw),
+            _buildExtractedField("Desa", r.desaKelurahan),
+            _buildExtractedField("Kecamatan", r.kecamatan),
             _buildExtractedField("Kode Pos", r.kodePos),
             const SizedBox(height: 4),
             const Text(
@@ -416,6 +419,50 @@ class AddKKPage extends StatelessWidget {
             controller: vm.alamatController,
             decoration: const InputDecoration(labelText: 'Alamat'),
             onChanged: (value) => vm.alamat = value,
+          ),
+
+          const SizedBox(height: 12),
+
+          // RT/RW info (read-only, dari OCR atau rtId)
+          if (vm.rtRwInfo.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F9FF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFBAE6FD)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 18, color: Color(0xFF0284C7)),
+                  const SizedBox(width: 8),
+                  Text(
+                    'RT/RW: ${vm.rtRwInfo}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF0369A1),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          const SizedBox(height: 12),
+
+          TextField(
+            controller: vm.desaController,
+            decoration: const InputDecoration(labelText: 'Desa/Kelurahan'),
+            onChanged: (value) => vm.desa = value,
+          ),
+
+          const SizedBox(height: 12),
+
+          TextField(
+            controller: vm.kecamatanController,
+            decoration: const InputDecoration(labelText: 'Kecamatan'),
+            onChanged: (value) => vm.kecamatan = value,
           ),
 
           const SizedBox(height: 12),

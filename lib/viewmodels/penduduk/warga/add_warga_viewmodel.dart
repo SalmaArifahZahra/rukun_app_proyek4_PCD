@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/widgets.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:rukun_app_proyek4/models/keluarga_model.dart';
 import 'package:rukun_app_proyek4/models/warga_model.dart';
 import 'package:rukun_app_proyek4/repositories/warga_repository.dart';
+import 'package:rukun_app_proyek4/services/pcd/ktp_extraction_service.dart';
 
 class AddWargaViewModel extends ChangeNotifier {
   final WargaRepository repo;
@@ -30,9 +35,104 @@ class AddWargaViewModel extends ChangeNotifier {
   DateTime? tanggalLahir;
   DateTime? tanggalPerkawinan;
 
+  // ── KTP Scan State ──
+  bool isScanning = false;
+  String? scanError;
+  KTPExtractionResult? scanResult;
+  String scanStatus = '';
+
   final int kkId;
 
   AddWargaViewModel({required this.repo, required this.kkId});
+
+  // ── KTP Scan ──
+
+  Future<void> scanKTP(ImageSource source) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 85);
+
+    if (picked == null) return;
+
+    isScanning = true;
+    scanError = null;
+    scanStatus = 'Memproses gambar KTP...';
+    notifyListeners();
+
+    try {
+      final service = KTPExtractionService();
+      scanStatus = 'Menjalankan OCR...';
+      notifyListeners();
+
+      final result = await service.extractFromFile(File(picked.path));
+      scanResult = result;
+
+      if (result.isSuccess) {
+        _applyExtractionResult(result);
+        scanStatus = 'Ekstraksi KTP berhasil!';
+      } else {
+        scanStatus = 'Tidak dapat mengekstrak data dari gambar.';
+        scanError = result.error ?? 'OCR tidak menemukan field KTP.';
+      }
+    } catch (e) {
+      scanError = 'Gagal mengekstrak: ${e.toString().replaceAll("Exception: ", "")}';
+      scanStatus = 'Ekstraksi gagal.';
+    }
+
+    isScanning = false;
+    notifyListeners();
+  }
+
+  Future<void> retryScan() async {
+    scanResult = null;
+    scanError = null;
+    notifyListeners();
+  }
+
+  void _applyExtractionResult(KTPExtractionResult result) {
+    if (result.nik?.value != null) {
+      nik = result.nik!.value!;
+    }
+    if (result.nama?.value != null) {
+      nama = result.nama!.value!;
+    }
+    if (result.tempatLahir?.value != null) {
+      tempatLahir = result.tempatLahir!.value!;
+    }
+    if (result.tanggalLahir?.value != null) {
+      // Parse DD-MM-YYYY to DateTime
+      final dateStr = result.tanggalLahir!.value!;
+      final normalized = dateStr.replaceAll('/', '-');
+      final parts = normalized.split('-');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          tanggalLahir = DateTime(year, month, day);
+        }
+      }
+    }
+    if (result.jenisKelamin?.value != null) {
+      jenisKelamin = result.jenisKelamin!.value!;
+    }
+    if (result.golonganDarah?.value != null) {
+      golonganDarah = result.golonganDarah!.value!;
+    }
+    if (result.agama?.value != null) {
+      agama = result.agama!.value!;
+    }
+    if (result.statusPerkawinan?.value != null) {
+      statusPerkawinan = result.statusPerkawinan!.value!;
+    }
+    if (result.pekerjaan?.value != null) {
+      pekerjaan = result.pekerjaan!.value!;
+    }
+    if (result.kewarganegaraan?.value != null) {
+      kewarganegaraan = result.kewarganegaraan!.value!;
+    }
+  }
+
+  // ── Setters ──
 
   void setNama(String v) => _set(() => nama = v);
   void setNik(String v) => _set(() => nik = v);
@@ -159,7 +259,7 @@ class AddWargaViewModel extends ChangeNotifier {
     return v.trim().isEmpty ? null : v;
   }
 
-  Future<bool> saveWarga() async {
+  Future<bool> saveWarga(Keluarga kel) async {
     isSaving = true;
     errorMessage = null;
     notifyListeners();
@@ -186,7 +286,7 @@ class AddWargaViewModel extends ChangeNotifier {
         noKitap: _nullable(noKitap),
         namaAyah: _nullable(namaAyah),
         namaIbu: _nullable(namaIbu),
-        keluargaId: kkId,
+        keluarga: kel,
       );
 
       await repo.createWarga(warga);

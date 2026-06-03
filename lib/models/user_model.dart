@@ -59,15 +59,21 @@ class User {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'warga_id': wargaId,
-      'is_admin': isAdmin,
-      'warga': warga?.toJson(),
-      'keluarga': keluarga?.toJson(),
-      'rt': rt?.toJson(),
-      'rw': rw?.toJson(),
-      'pengurus': pengurus?.toJson(),
-    };
+    return {'id': id, 'warga_id': wargaId, 'is_admin': isAdmin};
+  }
+
+  @override
+  String toString() {
+    return '''
+User(
+  id: $id,
+  wargaId: $wargaId,
+  isAdmin: $isAdmin,
+  nama: ${warga?.nama},
+  rw: ${rw?.id},
+  rt: ${rt?.id},
+  pengurus: ${pengurus?.level}
+)
+''';
   }
 }

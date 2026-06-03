@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:rukun_app_proyek4/models/iuran/iuran_model.dart';
-import 'package:rukun_app_proyek4/repositories/iuran_repostiory.dart';
+import 'package:rukun_app_proyek4/models/rt_model.dart';
+import 'package:rukun_app_proyek4/models/rw_model.dart';
+import 'package:rukun_app_proyek4/repositories/iuran_repository.dart';
 
 class AddIuranViewModel extends ChangeNotifier {
   final IuranRepository repository;
@@ -19,8 +21,8 @@ class AddIuranViewModel extends ChangeNotifier {
     required String nama,
     int? jumlah,
     required String level,
-    required int rwId,
-    int? rtId,
+    required RwModel rw,
+    RtModel? rt,
     required IuranType tipe,
   }) async {
     try {
@@ -33,8 +35,8 @@ class AddIuranViewModel extends ChangeNotifier {
         nama: nama,
         jumlah: jumlah,
         level: level == "RT" ? IuranLevel.rt : IuranLevel.rw,
-        rwId: rwId,
-        rtId: rtId,
+        rw: rw,
+        rt: rt,
         tipe: tipe,
         isActive: true
       );

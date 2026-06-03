@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:rukun_app_proyek4/models/user_model.dart';
+import 'package:rukun_app_proyek4/views/pages/kegiatan/kegiatan_page.dart';
 
 // pages RW
-import 'package:rukun_app_proyek4/views/pages/rw/dashboard/dashboard_page.dart';
-import 'package:rukun_app_proyek4/views/pages/rw/iuran/iuran_page.dart';
-import 'package:rukun_app_proyek4/views/pages/rw/penduduk/penduduk_page.dart';
-import 'package:rukun_app_proyek4/views/pages/rw/profile/rw_profile_page.dart';
-import 'package:rukun_app_proyek4/views/pages/rw/surat/surat_page.dart';
+import 'package:rukun_app_proyek4/views/pages/roles/rw/dashboard/rw_dashboard.dart';
+import 'package:rukun_app_proyek4/views/pages/iuran/iuran_page.dart';
+import 'package:rukun_app_proyek4/views/pages/roles/rw/penduduk/penduduk_page.dart';
 
 // pages RT
-import 'package:rukun_app_proyek4/views/pages/rt/home_page.dart';
-import 'package:rukun_app_proyek4/views/pages/rt/penduduk/penduduk_page.dart';
-import 'package:rukun_app_proyek4/views/pages/rt/iuran/iuran_page.dart';
-import 'package:rukun_app_proyek4/views/pages/rt/surat_page.dart';
-import 'package:rukun_app_proyek4/views/pages/rt/profile_page.dart';
+import 'package:rukun_app_proyek4/views/pages/roles/rt/home_page.dart';
+import 'package:rukun_app_proyek4/views/pages/roles/rt/penduduk/penduduk_page.dart';
+import 'package:rukun_app_proyek4/views/pages/surat/surat_page.dart';
 
 // pages Warga
-import 'package:rukun_app_proyek4/views/pages/warga/home_page.dart';
-import 'package:rukun_app_proyek4/views/pages/warga/iuran/iuran_page.dart';
-import 'package:rukun_app_proyek4/views/pages/warga/profile/profile_page.dart';
-import 'package:rukun_app_proyek4/views/pages/warga/surat/pengajuan_surat_page.dart';
+import 'package:rukun_app_proyek4/views/pages/roles/warga/home_page.dart';
+import 'package:rukun_app_proyek4/views/pages/roles/warga/iuran/iuran_page.dart';
+import 'package:rukun_app_proyek4/views/pages/roles/warga/profile/profile_page.dart';
+import 'package:rukun_app_proyek4/views/pages/roles/warga/surat/pengajuan_surat_page.dart';
 
 class NavItem {
   final IconData icon;
@@ -43,17 +40,17 @@ class NavViewModel {
         NavItem(
           icon: Icons.payments,
           label: "Iuran",
-          page: RwIuranPage(user: user),
+          page: PengurusIuranPage(user: user),
         ),
         NavItem(
           icon: Icons.description,
           label: "Surat",
-          page: const RwSuratPage(),
+          page: SuratPage(user: user),
         ),
         NavItem(
-          icon: Icons.person,
-          label: "Profile",
-          page: const RwProfilePage(),
+          icon: Icons.event,
+          label: "Kegiatan",
+          page: const KegiatanPage(),
         ),
       ];
     }
@@ -70,17 +67,17 @@ class NavViewModel {
         NavItem(
           icon: Icons.payments,
           label: "Iuran",
-          page: RtIuranPage(user: user),
+          page: PengurusIuranPage(user: user),
         ),
         NavItem(
           icon: Icons.description,
           label: "Surat",
-          page: const RtSuratPage(),
+          page: SuratPage(user: user),
         ),
         NavItem(
-          icon: Icons.person,
-          label: "Profile",
-          page: const RtProfilePage(),
+          icon: Icons.event,
+          label: "Kegiatan",
+          page: KegiatanPage(),
         ),
       ];
     }
@@ -100,7 +97,7 @@ class NavViewModel {
       NavItem(
         icon: Icons.description,
         label: "Surat",
-        page: PengajuanSuratPage(),
+        page: PengajuanSuratPage(user: user),
       ),
       NavItem(icon: Icons.person, label: "Profile", page: WargaProfilePage()),
     ];

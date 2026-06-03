@@ -4,7 +4,7 @@ import 'package:rukun_app_proyek4/models/iuran/keluarga_status_model.dart';
 import 'package:rukun_app_proyek4/models/keluarga_model.dart';
 import 'package:rukun_app_proyek4/models/rt_model.dart';
 import 'package:rukun_app_proyek4/models/transaksi_model.dart';
-import 'package:rukun_app_proyek4/repositories/iuran_repostiory.dart';
+import 'package:rukun_app_proyek4/repositories/iuran_repository.dart';
 import 'package:rukun_app_proyek4/repositories/kk_repository.dart';
 import 'package:rukun_app_proyek4/repositories/rtrw_repository.dart';
 
@@ -74,6 +74,8 @@ class IuranBulananDetailViewModel extends ChangeNotifier {
       (sum, e) => sum + (e.jumlah ?? 0),
     );
   }
+
+  
 
   Future<void> fetchKK(int rtId) async {
     isLoading = true;

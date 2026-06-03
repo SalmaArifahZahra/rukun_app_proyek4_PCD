@@ -25,6 +25,19 @@ class DetailKKViewModel extends ChangeNotifier {
 
   List<Warga> anggota = [];
 
+  String _searchQuery = '';
+
+  List<Warga> get filteredAnggota {
+    if (_searchQuery.isEmpty) return anggota;
+    final q = _searchQuery.toLowerCase();
+    return anggota.where((w) => w.nama.toLowerCase().contains(q)).toList();
+  }
+
+  void setSearch(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+
   bool isDeleting = false;
 
   Future<void> fetchAnggota() async {
