@@ -4,14 +4,11 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
-import 'package:path_provider/path_provider.dart';
 
-import 'document_detector_v2.dart';
 import 'image_quality_checker.dart';
 import 'kk_ocr_engine.dart';
 import 'kk_preprocessor.dart';
 import 'kk_roi_manager.dart';
-import 'perspective_corrector.dart';
 
 class KKExtractionServiceV2 {
   final _ocrEngine = KKOCREngine();
@@ -24,44 +21,35 @@ class KKExtractionServiceV2 {
       final bytes = await imageFile.readAsBytes();
       final original = img.decodeImage(bytes);
       ImageQualityResult? quality;
-      
+
       if (original != null) {
         quality = await ImageQualityChecker.checkQuality(original);
-        // HAPUS ROTASI MANUAL: Dart copyRotate bisa membuat gambar menjadi Upside-Down.
-        // Google ML Kit sudah secara otomatis membaca EXIF orientation dari kamera 
-        // sehingga teks akan selalu dibaca dengan urutan yang benar (Top to Bottom).
       }
 
-      // 2. OCR Full Image Direct (Zero-Crop Block Analysis)
-      // Kirim file ASLI langsung ke ML Kit.
+      // 2. OCR Full Image (primary source for most fields)
       final recognizedText = await _ocrEngine.processImageDirect(imageFile);
 
-      // 3. Ekstrak data dari TextBlocks untuk menghindari pencampuran kolom
-      ParseResult? nomorKKResult;
-      ParseResult? alamatResult;
+      // 3. Parse fields from full-image OCR blocks
+      ParseResult alamatResult = ParseResult.failed('alamat', '');
       ParseResult? rtRwResult;
       ParseResult? desaResult;
       ParseResult? kodePosResult;
       ParseResult? kecResult;
 
-      // Urutkan blok teks dari atas ke bawah berdasarkan BoundingBox (Penting!)
       final blocks = recognizedText.blocks.toList()
         ..sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
 
-      // Gabungkan semua teks dari atas ke bawah untuk pencarian global (Foolproof No. KK)
       final fullText = blocks.map((b) => b.text).join('\n');
-      
-      debugPrint('\n\n===== HASIL BACA MESIN (RAW OCR) =====\n$fullText\n======================================\n\n');
-      
-      // Nomor KK PASTI adalah 16 digit pertama yang muncul di dokumen (karena di atas tabel)
-      nomorKKResult = KKFieldParser.parseNomorKK(fullText);
 
-      // Loop semua block yang terdeteksi untuk field lainnya
+      debugPrint('\n\n===== RAW OCR (FULL IMAGE) =====\n$fullText\n================================\n\n');
+
+      final nomorKKResult = KKFieldParser.parseNomorKK(fullText);
+
+      // Parse per-block (untuk field yang sensitif posisi)
       for (final block in blocks) {
         final text = block.text;
 
-        // Coba parsing setiap field dari block ini
-        if (alamatResult == null || !alamatResult.isFound) {
+        if (!alamatResult.isFound) {
           final res = KKFieldParser.parseAlamat(text);
           if (res.isFound) alamatResult = res;
         }
@@ -83,19 +71,59 @@ class KKExtractionServiceV2 {
         }
       }
 
-      // 4. Return Hasil Ekstraksi
+      // 4. ROI Header Extraction + Preprocessing (kualitas lebih baik)
+      if (original != null) {
+        try {
+          final headerText = await _extractHeaderRegion(original);
+          if (headerText.isNotEmpty) {
+            debugPrint('\n===== HEADER ROI (PREPROCESSED) =====\n$headerText\n=====================================\n');
+
+            // Alamat: header-first (kualitas lebih baik), fallback ke full-image
+            if (!alamatResult.isFound) {
+              final headerAlamat = KKFieldParser.parseAlamat(headerText);
+              if (headerAlamat.isFound) alamatResult = headerAlamat;
+            }
+
+            // Field lain: ambil yang confidence lebih tinggi
+            final headerRTRW = KKFieldParser.parseRTRW(headerText);
+            if (headerRTRW.isFound && (rtRwResult == null || !rtRwResult.isFound || headerRTRW.confidence > rtRwResult.confidence)) {
+              rtRwResult = headerRTRW;
+            }
+            final headerDesa = KKFieldParser.parseDesaKelurahan(headerText);
+            if (headerDesa.isFound && (desaResult == null || !desaResult.isFound || headerDesa.confidence > desaResult.confidence)) {
+              desaResult = headerDesa;
+            }
+            final headerKodePos = KKFieldParser.parseKodePos(headerText);
+            if (headerKodePos.isFound && (kodePosResult == null || !kodePosResult.isFound || headerKodePos.confidence > kodePosResult.confidence)) {
+              kodePosResult = headerKodePos;
+            }
+            final headerKec = KKFieldParser.parseKecamatan(headerText);
+            if (headerKec.isFound && (kecResult == null || !kecResult.isFound || headerKec.confidence > kecResult.confidence)) {
+              kecResult = headerKec;
+            }
+          }
+        } catch (e) {
+          debugPrint('Header ROI extraction failed (non-fatal): $e');
+        }
+      }
+
+      // 5. Fallback: coba parse alamat dari fullText (jika block-level gagal)
+      if (!alamatResult.isFound) {
+        alamatResult = KKFieldParser.parseAlamat(fullText);
+      }
+
       stopwatch.stop();
 
       return KKExtractionOutputV2(
-        nomorKK: nomorKKResult ?? ParseResult.failed('nomor_kk', ''),
-        alamat: alamatResult ?? ParseResult.failed('alamat', ''),
+        nomorKK: nomorKKResult,
+        alamat: alamatResult,
         kodePos: kodePosResult ?? ParseResult.failed('kode_pos', ''),
         rtRw: rtRwResult ?? ParseResult.failed('rt_rw', ''),
         desaKelurahan: desaResult ?? ParseResult.failed('desa_kelurahan', ''),
         kecamatan: kecResult ?? ParseResult.failed('kecamatan', ''),
-        anggotaKeluarga: [], // Tabel dimatikan dulu untuk performa
+        anggotaKeluarga: [],
         qualityScore: quality?.overallQuality ?? 0.8,
-        perspectiveScore: 1.0, // Bypass perspective
+        perspectiveScore: 1.0,
         orientation: KKOrientation.landscape,
         processingTimeMs: stopwatch.elapsedMilliseconds,
         warnings: quality?.warnings ?? [],
@@ -108,6 +136,19 @@ class KKExtractionServiceV2 {
         duration: stopwatch.elapsedMilliseconds,
       );
     }
+  }
+
+  /// Crop header region, preprocess (CLAHE + unsharp mask), lalu OCR.
+  Future<String> _extractHeaderRegion(img.Image original) async {
+    final orientation = KKROIManager.detectOrientation(original);
+    final region = orientation == KKOrientation.landscape
+        ? const KKRegion(yStart: 0.05, yEnd: 0.40, xStart: 0.0, xEnd: 1.0, name: 'header')
+        : const KKRegion(yStart: 0.05, yEnd: 0.30, xStart: 0.0, xEnd: 1.0, name: 'header');
+
+    final cropped = KKROIManager.cropRegionWithPadding(original, region, paddingPercent: 0.02);
+    final preprocessed = KKPreprocessor.process(cropped, PreprocessMode.forOCRHeader);
+
+    return await _ocrEngine.recognizeRegion(preprocessed);
   }
 
   void dispose() => _ocrEngine.dispose();

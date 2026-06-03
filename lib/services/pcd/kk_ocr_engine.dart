@@ -97,37 +97,48 @@ class KKFieldParser {
 
   // ── Alamat ─────────────────────────────────────
   static ParseResult parseAlamat(String rawText) {
-    // Normalize whitespace
     final lines = rawText.split('\n')
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)
         .toList();
 
-    // Strategy 1: Cari baris setelah "Alamat"
+    // Strategy 1: Cari baris setelah "Alamat" (OCR-tolerant)
     for (int i = 0; i < lines.length; i++) {
-      if (RegExp(r'^Alamat\s*[:\.]?', caseSensitive: false).hasMatch(lines[i])) {
-        // Nilai bisa di baris yang sama atau baris berikutnya
+      // Fuzzy match: Alamat / Alam at / Alamaf / Aiamat (OCR error pada 'l'→'i', 'a'→'s', dll)
+      if (RegExp(r'^A[1lI]?a[mn][a4][t7]\s*[:\.]?', caseSensitive: false).hasMatch(lines[i]) ||
+          RegExp(r'^Alamat\s*[:\.]?', caseSensitive: false).hasMatch(lines[i])) {
         final same = lines[i].replaceFirst(
-            RegExp(r'^Alamat\s*[:\.]?\s*', caseSensitive: false), ''
+            RegExp(r'^A[1lI]?a[mn][a4][t7]\s*[:\.]?\s*', caseSensitive: false), ''
         ).trim();
 
         if (same.length > 3) {
           return ParseResult(value: _cleanAlamat(same), confidence: 0.90, rawText: rawText);
         }
 
+        // Cek baris berikutnya (bisa multi-line)
         if (i + 1 < lines.length) {
           final next = lines[i+1].trim();
-          // Pastikan bukan label lain
           if (!_isFieldLabel(next) && next.length > 3) {
+            // Jika next line juga alamat, gabungkan (alamat panjang)
+            if (i + 2 < lines.length && !_isFieldLabel(lines[i+2].trim()) &&
+                _isContinuationOfAddress(next, lines[i+2].trim())) {
+              return ParseResult(
+                value: _cleanAlamat('$next ${lines[i+2].trim()}'),
+                confidence: 0.85,
+                rawText: rawText,
+              );
+            }
             return ParseResult(value: _cleanAlamat(next), confidence: 0.85, rawText: rawText);
           }
         }
       }
     }
 
-    // Strategy 2: Cari pola alamat (JL/JALAN/GG/KAMPUNG)
+    // Strategy 2: Cari pola alamat (expanded patterns)
     final alamatPattern = RegExp(
-      r'(?:JL\.?|JALAN|GG\.?|GANG|DUSUN|DSN\.?|KP\.?|KAMPUNG|BLOK)\s+.+',
+      r'(?:JL\.?|JALAN|GG\.?|GANG|DUSUN|DSN\.?|KP\.?|KAMPUNG|BLOK|'
+      r'Ds\.?|Desa\s|Perum\.?|Perumahan|Komplek|Kompleks|Kav\.?|Kavling|'
+      r'Link\.?|Lingkungan)\s+.+',
       caseSensitive: false,
     );
 
@@ -139,6 +150,28 @@ class KKFieldParser {
           confidence: 0.75,
           rawText: rawText,
         );
+      }
+    }
+
+    // Strategy 3: Positional — cari baris sebelum RT/RW atau Desa/Kelurahan
+    // Layout KK: Alamat di atas RT/RW
+    for (int i = 0; i < lines.length; i++) {
+      if (RegExp(r'^RT\s*[/\\]\s*RW', caseSensitive: false).hasMatch(lines[i]) ||
+          RegExp(r'^(?:Desa|Kelurahan|Kel\.?)\s*[:\.]?', caseSensitive: false).hasMatch(lines[i])) {
+        // Cek 1-2 baris sebelumnya
+        for (int j = i - 1; j >= 0 && j >= i - 2; j--) {
+          final candidate = lines[j].trim();
+          if (candidate.length > 3 &&
+              !_isFieldLabel(candidate) &&
+              !_isOnlyDigits(candidate) &&
+              _isAddressLine(candidate)) {
+            return ParseResult(
+              value: _cleanAlamat(candidate),
+              confidence: 0.65,
+              rawText: rawText,
+            );
+          }
+        }
       }
     }
 
@@ -364,8 +397,44 @@ class KKFieldParser {
   static String _cleanAlamat(String raw) {
     return raw
         .replaceAll(RegExp(r'\s+'), ' ')
-        .replaceAll(RegExp(r'[^a-zA-Z0-9\s\.\,\/\-]'), '')
+        .replaceAll(RegExp(r'[^a-zA-Z0-9\s\.\,\/\-\(\)\#\d]'), '')
         .trim();
+  }
+
+  /// Cek apakah baris terlihat seperti alamat
+  static bool _isAddressLine(String line) {
+    // Mengandung pola jalan/alamat
+    if (RegExp(r'(?:JL\.?|JALAN|GG\.?|GANG|DUSUN|DSN\.?|KP\.?|KAMPUNG|BLOK|'
+        r'Ds\.?|Perum\.?|Perumahan|Komplek|Kompleks|Kav\.?|Link\.?|Lingkungan)',
+        caseSensitive: false).hasMatch(line)) {
+      return true;
+    }
+    // Mengandung "No." diikuti angka
+    if (RegExp(r'No\.?\s*\d', caseSensitive: false).hasMatch(line)) {
+      return true;
+    }
+    // Kombinasi angka + teks (misal "12 Jl. Merdeka" atau "RT 003")
+    if (RegExp(r'^\d+\s+[A-Za-z]').hasMatch(line)) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Cek apakah line2 adalah kelanjutan alamat dari line1
+  static bool _isContinuationOfAddress(String line1, String line2) {
+    // Jika line2 dimulai dengan huruf kecil, kemungkinan kelanjutan
+    if (line2.isNotEmpty && line2[0] == line2[0].toLowerCase() && line2[0] != line2[0].toUpperCase()) {
+      return true;
+    }
+    // Jika line2 mengandung pola lanjutan alamat (RT/RW, No, Blok)
+    if (RegExp(r'^(?:RT|RW|No\.?|Blok)', caseSensitive: false).hasMatch(line2)) {
+      return true;
+    }
+    return false;
+  }
+
+  static bool _isOnlyDigits(String text) {
+    return RegExp(r'^\d+$').hasMatch(text.trim());
   }
 
   static String _cleanText(String raw) {
